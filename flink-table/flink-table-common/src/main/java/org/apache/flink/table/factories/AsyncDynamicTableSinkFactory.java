@@ -16,21 +16,19 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.connector.sink;
+package org.apache.flink.table.factories;
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.configuration.ConfigOption;
-import org.apache.flink.connector.base.sink.AsyncSinkBase;
-import org.apache.flink.table.connector.options.AsyncSinkConnectorOptions;
-import org.apache.flink.table.factories.DynamicTableFactory;
-import org.apache.flink.table.factories.DynamicTableSinkFactory;
+import org.apache.flink.table.AsyncSinkConnectorOptions;
 
 import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Abstract Implementation of {@link DynamicTableSinkFactory} having {@link AsyncSinkBase} fields as
- * optional table options defined in {@link AsyncSinkConnectorOptions}.
+ * Abstract Implementation of {@link DynamicTableSinkFactory} having {@link
+ * org.apache.flink.connector.base.sink.AsyncSinkBase} fields as optional table options defined in
+ * {@link AsyncSinkConnectorOptions}.
  */
 @PublicEvolving
 public abstract class AsyncDynamicTableSinkFactory implements DynamicTableFactory {

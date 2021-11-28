@@ -19,10 +19,10 @@
 package org.apache.flink.streaming.connectors.kinesis.table.utils;
 
 import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.streaming.connectors.kinesis.config.AWSConfigConstants;
-import org.apache.flink.streaming.connectors.kinesis.config.ConsumerConfigConstants;
+import org.apache.flink.connector.aws.config.AWSConfigConstants;
+import org.apache.flink.connector.kinesis.config.AsyncProducerConfigConstants;
 import org.apache.flink.table.connector.options.ConfigurationValidator;
-import org.apache.flink.table.connector.options.GeneralOptionsUtils;
+import org.apache.flink.table.connector.options.TableOptionsUtils;
 
 import software.amazon.awssdk.http.Protocol;
 
@@ -34,7 +34,11 @@ import java.util.Properties;
 
 /** Class for handling Kinesis async client specific options. */
 @PublicEvolving
-public class KinesisClientOptionsUtils implements GeneralOptionsUtils, ConfigurationValidator {
+public class KinesisClientOptionsUtils implements TableOptionsUtils, ConfigurationValidator {
+
+    private static final String CLIENT_MAX_CONCURRENCY_OPTION = "max-concurrency";
+    private static final String CLIENT_MAX_TIMEOUT_OPTION = "read-timeout";
+    private static final String CLIENT_HTTP_PROTOCOL_VERSION_OPTION = "protocol.version";
 
     private final Map<String, String> resolvedOptions;
 
@@ -42,11 +46,8 @@ public class KinesisClientOptionsUtils implements GeneralOptionsUtils, Configura
         this.resolvedOptions = resolvedOptions;
     }
 
-    /**
-     * Prefix for properties defined in {@link
-     * org.apache.flink.streaming.connectors.kinesis.config.AWSConfigConstants}.
-     */
-    public static final String SINK_CLIENT_PREFIX = "sink.client.";
+    /** Prefix for properties defined in {@link AWSConfigConstants}. */
+    public static final String SINK_CLIENT_PREFIX = "sink.http-client.";
 
     @Override
     public Map<String, String> getProcessedResolvedOptions() {
@@ -76,22 +77,27 @@ public class KinesisClientOptionsUtils implements GeneralOptionsUtils, Configura
     }
 
     private static String translateClientKeys(String key) {
-        if (key.contains("stream.efo")) {
-            return "flink." + key.substring(SINK_CLIENT_PREFIX.length());
+        String truncatedKey = key.substring(SINK_CLIENT_PREFIX.length());
+        if (truncatedKey.equals(CLIENT_MAX_CONCURRENCY_OPTION)) {
+            return AsyncProducerConfigConstants.HTTP_CLIENT_MAX_CONCURRENCY;
+        } else if (truncatedKey.equals(CLIENT_MAX_TIMEOUT_OPTION)) {
+            return AsyncProducerConfigConstants.HTTP_CLIENT_READ_TIMEOUT_MILLIS;
+        } else if (truncatedKey.equals(CLIENT_HTTP_PROTOCOL_VERSION_OPTION)) {
+            return AWSConfigConstants.HTTP_PROTOCOL_VERSION;
         } else {
-            return key.substring(SINK_CLIENT_PREFIX.length());
+            return truncatedKey;
         }
     }
 
     private static void validatedConfigurations(Properties config) {
         ConfigurationValidator.validateOptionalPositiveIntProperty(
                 config,
-                ConsumerConfigConstants.EFO_HTTP_CLIENT_MAX_CONCURRENCY,
-                "Invalid value given for EFO HTTP client max concurrency. Must be positive integer.");
+                AsyncProducerConfigConstants.HTTP_CLIENT_MAX_CONCURRENCY,
+                "Invalid value given for HTTP client max concurrency. Must be positive integer.");
         ConfigurationValidator.validateOptionalPositiveIntProperty(
                 config,
-                ConsumerConfigConstants.EFO_HTTP_CLIENT_READ_TIMEOUT_MILLIS,
-                "Invalid value given for EFO HTTP read timeout. Must be positive integer.");
+                AsyncProducerConfigConstants.HTTP_CLIENT_READ_TIMEOUT_MILLIS,
+                "Invalid value given for HTTP read timeout. Must be positive integer.");
         validateOptionalHttpProtocolProperty(config);
     }
 

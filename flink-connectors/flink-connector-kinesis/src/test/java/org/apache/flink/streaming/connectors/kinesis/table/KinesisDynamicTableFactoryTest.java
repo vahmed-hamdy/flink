@@ -64,7 +64,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
 /**
- * Test for {@link KinesisDynamicSource} and {@link KinesisDynamicTableSink} created by {@link
+ * Test for {@link KinesisDynamicSource} and {@link KinesisDynamicSink} created by {@link
  * KinesisDynamicTableFactory}.
  */
 public class KinesisDynamicTableFactoryTest extends TestLogger {
@@ -147,14 +147,13 @@ public class KinesisDynamicTableFactoryTest extends TestLogger {
         List<String> sinkPartitionKeys = Arrays.asList("name", "curr_id");
 
         // Construct actual DynamicTableSink using FactoryUtil
-        KinesisDynamicTableSink actualSink =
-                (KinesisDynamicTableSink)
-                        createTableSink(sinkSchema, sinkPartitionKeys, sinkOptions);
+        KinesisDynamicSink actualSink =
+                (KinesisDynamicSink) createTableSink(sinkSchema, sinkPartitionKeys, sinkOptions);
 
         // Construct expected DynamicTableSink using factory under test
-        KinesisDynamicTableSink expectedSink =
-                (KinesisDynamicTableSink)
-                        new KinesisDynamicTableSink.KinesisDynamicTableSinkBuilder()
+        KinesisDynamicSink expectedSink =
+                (KinesisDynamicSink)
+                        new KinesisDynamicSink.KinesisDynamicTableSinkBuilder()
                                 .setConsumedDataType(physicalDataType)
                                 .setStream(STREAM_NAME)
                                 .setKinesisClientProperties(defaultProducerProperties())
@@ -185,13 +184,13 @@ public class KinesisDynamicTableFactoryTest extends TestLogger {
         Map<String, String> sinkOptions = defaultTableOptions().build();
 
         // Construct actual DynamicTableSink using FactoryUtil
-        KinesisDynamicTableSink actualSink =
-                (KinesisDynamicTableSink) createTableSink(sinkSchema, sinkOptions);
+        KinesisDynamicSink actualSink =
+                (KinesisDynamicSink) createTableSink(sinkSchema, sinkOptions);
 
         // Construct expected DynamicTableSink using factory under test
-        KinesisDynamicTableSink expectedSink =
-                (KinesisDynamicTableSink)
-                        new KinesisDynamicTableSink.KinesisDynamicTableSinkBuilder()
+        KinesisDynamicSink expectedSink =
+                (KinesisDynamicSink)
+                        new KinesisDynamicSink.KinesisDynamicTableSinkBuilder()
                                 .setConsumedDataType(sinkSchema.toPhysicalRowDataType())
                                 .setStream(STREAM_NAME)
                                 .setKinesisClientProperties(defaultProducerProperties())
@@ -219,12 +218,12 @@ public class KinesisDynamicTableFactoryTest extends TestLogger {
         Map<String, String> sinkOptions = defaultTableOptionsWithSinkOptions().build();
 
         // Construct actual DynamicTableSink using FactoryUtil
-        KinesisDynamicTableSink actualSink =
-                (KinesisDynamicTableSink) createTableSink(sinkSchema, sinkOptions);
+        KinesisDynamicSink actualSink =
+                (KinesisDynamicSink) createTableSink(sinkSchema, sinkOptions);
 
         // Construct expected DynamicTableSink using factory under test
-        KinesisDynamicTableSink expectedSink =
-                (KinesisDynamicTableSink)
+        KinesisDynamicSink expectedSink =
+                (KinesisDynamicSink)
                         getDefaultSinkBuilder()
                                 .setConsumedDataType(sinkSchema.toPhysicalRowDataType())
                                 .setStream(STREAM_NAME)
@@ -253,14 +252,14 @@ public class KinesisDynamicTableFactoryTest extends TestLogger {
         Map<String, String> sinkOptions = defaultTableOptionsWithDeprecatedOptions().build();
 
         // Construct actual DynamicTableSink using FactoryUtil
-        KinesisDynamicTableSink actualSink =
-                (KinesisDynamicTableSink) createTableSink(sinkSchema, sinkOptions);
+        KinesisDynamicSink actualSink =
+                (KinesisDynamicSink) createTableSink(sinkSchema, sinkOptions);
 
         // Construct expected DynamicTableSink using factory under test
         // Construct expected DynamicTableSink using factory under test
-        KinesisDynamicTableSink expectedSink =
-                (KinesisDynamicTableSink)
-                        new KinesisDynamicTableSink.KinesisDynamicTableSinkBuilder()
+        KinesisDynamicSink expectedSink =
+                (KinesisDynamicSink)
+                        new KinesisDynamicSink.KinesisDynamicTableSinkBuilder()
                                 .setFailOnError(true)
                                 .setMaxBatchSize(100)
                                 .setMaxInFlightRequests(100)
@@ -371,7 +370,7 @@ public class KinesisDynamicTableFactoryTest extends TestLogger {
                 .withTableOption("sink.fail-on-error", "true")
                 .withTableOption("sink.batch.max-size", "100")
                 .withTableOption("sink.requests.max-inflight", "100")
-                .withTableOption("sink.request.max-buffered", "100")
+                .withTableOption("sink.requests.max-buffered", "100")
                 .withTableOption("sink.flush-buffer.size", "1000")
                 .withTableOption("sink.flush-buffer.timeout", "1000");
     }
@@ -410,12 +409,12 @@ public class KinesisDynamicTableFactoryTest extends TestLogger {
         };
     }
 
-    private KinesisDynamicTableSink.KinesisDynamicTableSinkBuilder getDefaultSinkBuilder() {
-        return new KinesisDynamicTableSink.KinesisDynamicTableSinkBuilder()
+    private KinesisDynamicSink.KinesisDynamicTableSinkBuilder getDefaultSinkBuilder() {
+        return new KinesisDynamicSink.KinesisDynamicTableSinkBuilder()
                 .setFailOnError(true)
                 .setMaxBatchSize(100)
                 .setMaxInFlightRequests(100)
-                .setFlushOnBufferSizeInBytes(1000)
+                .setMaxBufferSizeInBytes(1000)
                 .setMaxBufferedRequests(100)
                 .setMaxTimeInBufferMS(1000);
     }

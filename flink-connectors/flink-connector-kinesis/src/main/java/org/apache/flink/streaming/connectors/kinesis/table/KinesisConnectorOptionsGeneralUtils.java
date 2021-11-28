@@ -16,19 +16,18 @@
  * limitations under the License.
  */
 
-package org.apache.flink.streaming.connectors.kinesis.table.utils;
+package org.apache.flink.streaming.connectors.kinesis.table;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.configuration.ReadableConfig;
+import org.apache.flink.connector.aws.config.AWSConfigConstants;
 import org.apache.flink.connector.kinesis.sink.KinesisDataStreamsSinkElementConverter;
-import org.apache.flink.streaming.connectors.kinesis.config.AWSConfigConstants;
-import org.apache.flink.streaming.connectors.kinesis.table.KinesisConnectorOptions;
-import org.apache.flink.streaming.connectors.kinesis.table.KinesisPartitionKeyGeneratorFactory;
-import org.apache.flink.table.connector.options.AsyncSinkConfigurationValidator;
-import org.apache.flink.table.connector.options.AsyncSinkConnectorOptions;
+import org.apache.flink.streaming.connectors.kinesis.table.utils.AWSOptionsUtils;
+import org.apache.flink.streaming.connectors.kinesis.table.utils.KinesisClientOptionsUtils;
+import org.apache.flink.table.AsyncSinkConnectorOptions;
 import org.apache.flink.table.connector.options.ConfigurationValidator;
-import org.apache.flink.table.connector.options.ConnectorOptionsUtils;
-import org.apache.flink.table.connector.options.GeneralOptionsUtils;
+import org.apache.flink.table.connector.options.TableOptionsUtils;
+import org.apache.flink.table.connector.sink.options.AsyncSinkConfigurationValidator;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.factories.FactoryUtil;
 import org.apache.flink.table.types.logical.RowType;
@@ -52,8 +51,7 @@ import java.util.Set;
  * set of options.
  */
 @Internal
-public class KinesisConnectorOptionsGeneralUtils extends AsyncSinkConfigurationValidator
-        implements ConnectorOptionsUtils {
+public class KinesisConnectorOptionsGeneralUtils extends AsyncSinkConfigurationValidator {
 
     private static final Logger LOG =
             LoggerFactory.getLogger(KinesisConnectorOptionsGeneralUtils.class);
@@ -119,12 +117,10 @@ public class KinesisConnectorOptionsGeneralUtils extends AsyncSinkConfigurationV
                         tableOptions, physicalType, partitionKeys, classLoader);
     }
 
-    @Override
     public Properties getValidatedSourceConfigurations() {
         return kinesisConsumerOptionsUtils.getValidatedConfigurations();
     }
 
-    @Override
     public Properties getValidatedSinkConfigurations() {
         Properties properties = super.getValidatedConfigurations();
         properties.put(
@@ -164,7 +160,6 @@ public class KinesisConnectorOptionsGeneralUtils extends AsyncSinkConfigurationV
         return properties;
     }
 
-    @Override
     public List<String> getNonValidatedPrefixes() {
         return Arrays.asList(NON_VALIDATED_PREFIXES);
     }
@@ -182,7 +177,7 @@ public class KinesisConnectorOptionsGeneralUtils extends AsyncSinkConfigurationV
     }
 
     private static class KinesisProducerOptionsMapper
-            implements GeneralOptionsUtils, ConfigurationValidator {
+            implements TableOptionsUtils, ConfigurationValidator {
         private static final String KINESIS_PRODUCER_PREFIX = "sink.producer.";
         private static final Map<String, String> kinesisProducerFallbackKeys = new HashMap<>();
 

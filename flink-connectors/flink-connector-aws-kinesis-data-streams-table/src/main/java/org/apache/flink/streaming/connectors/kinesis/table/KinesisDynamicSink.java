@@ -42,11 +42,12 @@ import javax.annotation.Nullable;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Properties;
 
 /** Kinesis-backed {@link AsyncDynamicTableSink}. */
 @Internal
-public class KinesisDynamicTableSink extends AsyncDynamicTableSink<PutRecordsRequestEntry>
+public class KinesisDynamicSink extends AsyncDynamicTableSink<PutRecordsRequestEntry>
         implements SupportsPartitioning {
 
     /** Consumed data type of the table. */
@@ -66,11 +67,11 @@ public class KinesisDynamicTableSink extends AsyncDynamicTableSink<PutRecordsReq
 
     private final Boolean failOnError;
 
-    public KinesisDynamicTableSink(
+    public KinesisDynamicSink(
             @Nullable Integer maxBatchSize,
             @Nullable Integer maxInFlightRequests,
             @Nullable Integer maxBufferedRequests,
-            @Nullable Long flushOnBufferSizeInBytes,
+            @Nullable Long maxBufferSizeInBytes,
             @Nullable Long maxTimeInBufferMS,
             @Nullable Boolean failOnError,
             @Nullable DataType consumedDataType,
@@ -82,7 +83,7 @@ public class KinesisDynamicTableSink extends AsyncDynamicTableSink<PutRecordsReq
                 maxBatchSize,
                 maxInFlightRequests,
                 maxBufferedRequests,
-                flushOnBufferSizeInBytes,
+                maxBufferSizeInBytes,
                 maxTimeInBufferMS);
         this.failOnError = failOnError;
         this.kinesisClientProperties = kinesisClientProperties;
@@ -107,37 +108,22 @@ public class KinesisDynamicTableSink extends AsyncDynamicTableSink<PutRecordsReq
                 encodingFormat.createRuntimeEncoder(context, consumedDataType);
         ElementConverter<RowData, PutRecordsRequestEntry> elementConverter =
                 KinesisDataStreamsSinkElementConverter.<RowData>builder()
-                        .serializationSchema(serializationSchema)
-                        .partitionKeyGenerator(partitioner)
+                        .setSerializationSchema(serializationSchema)
+                        .setPartitionKeyGenerator(partitioner)
                         .build();
+
         KinesisDataStreamsSinkBuilder<RowData> builder =
                 KinesisDataStreamsSink.<RowData>builder()
                         .setElementConverter(elementConverter)
                         .setKinesisClientProperties(kinesisClientProperties)
                         .setStreamName(stream);
-        if (failOnError != null) {
-            builder.setFailOnError(failOnError);
-        }
 
-        if (maxBatchSize != null) {
-            builder.setMaxBatchSize(maxBatchSize);
-        }
-
-        if (flushOnBufferSizeInBytes != null) {
-            builder.setFlushOnBufferSizeInBytes(flushOnBufferSizeInBytes);
-        }
-
-        if (maxInFlightRequests != null) {
-            builder.setMaxInFlightRequests(maxInFlightRequests);
-        }
-
-        if (maxBufferedRequests != null) {
-            builder.setMaxBufferedRequests(maxBufferedRequests);
-        }
-
-        if (maxTimeInBufferMS != null) {
-            builder.setMaxTimeInBufferMS(maxTimeInBufferMS);
-        }
+        Optional.ofNullable(failOnError).ifPresent(builder::setFailOnError);
+        Optional.ofNullable(maxBatchSize).ifPresent(builder::setMaxBatchSize);
+        Optional.ofNullable(maxBufferSizeInBytes).ifPresent(builder::setMaxBatchSizeInBytes);
+        Optional.ofNullable(maxInFlightRequests).ifPresent(builder::setMaxInFlightRequests);
+        Optional.ofNullable(maxBufferedRequests).ifPresent(builder::setMaxBufferedRequests);
+        Optional.ofNullable(maxTimeInBufferMS).ifPresent(builder::setMaxTimeInBufferMS);
 
         KinesisDataStreamsSink<RowData> kdsSink = builder.build();
         return SinkProvider.of(kdsSink);
@@ -145,11 +131,11 @@ public class KinesisDynamicTableSink extends AsyncDynamicTableSink<PutRecordsReq
 
     @Override
     public DynamicTableSink copy() {
-        return new KinesisDynamicTableSink(
+        return new KinesisDynamicSink(
                 maxBatchSize,
                 maxInFlightRequests,
                 maxBufferedRequests,
-                flushOnBufferSizeInBytes,
+                maxBufferSizeInBytes,
                 maxTimeInBufferMS,
                 failOnError,
                 consumedDataType,
@@ -196,7 +182,7 @@ public class KinesisDynamicTableSink extends AsyncDynamicTableSink<PutRecordsReq
             return false;
         }
 
-        KinesisDynamicTableSink that = (KinesisDynamicTableSink) o;
+        KinesisDynamicSink that = (KinesisDynamicSink) o;
         return super.equals(o)
                 && Objects.equals(consumedDataType, that.consumedDataType)
                 && Objects.equals(stream, that.stream)
@@ -218,7 +204,7 @@ public class KinesisDynamicTableSink extends AsyncDynamicTableSink<PutRecordsReq
                 failOnError);
     }
 
-    /** Builder class for {@link KinesisDynamicTableSink}. */
+    /** Builder class for {@link KinesisDynamicSink}. */
     @Internal
     public static class KinesisDynamicTableSinkBuilder
             extends AsyncDynamicTableSinkBuilder<
@@ -266,11 +252,11 @@ public class KinesisDynamicTableSink extends AsyncDynamicTableSink<PutRecordsReq
 
         @Override
         public AsyncDynamicTableSink<PutRecordsRequestEntry> build() {
-            return new KinesisDynamicTableSink(
+            return new KinesisDynamicSink(
                     getMaxBatchSize(),
                     getMaxInFlightRequests(),
                     getMaxBufferedRequests(),
-                    getFlushOnBufferSizeInBytes(),
+                    getMaxBufferSizeInBytes(),
                     getMaxTimeInBufferMS(),
                     failOnError,
                     consumedDataType,

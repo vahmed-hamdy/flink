@@ -69,35 +69,33 @@ public class KinesisClientOptionsUtilsTest {
     @Test
     public void testBadKinesisClientMaxConcurrency() {
         Map<String, String> defaultClientOptions = getDefaultClientOptions();
-        defaultClientOptions.put(
-                "sink.client.stream.efo.http-client.max-concurrency", "invalid-integer");
+        defaultClientOptions.put("sink.http-client.max-concurrency", "invalid-integer");
         KinesisClientOptionsUtils kinesisClientOptionsUtils =
                 new KinesisClientOptionsUtils(defaultClientOptions);
         thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage(
-                "Invalid value given for EFO HTTP client max concurrency. Must be positive integer.");
+                "Invalid value given for HTTP client max concurrency. Must be positive integer.");
         kinesisClientOptionsUtils.getValidatedConfigurations();
     }
 
     @Test
     public void testBadKinesisClientReadTimeout() {
         Map<String, String> defaultClientOptions = getDefaultClientOptions();
-        defaultClientOptions.put(
-                "sink.client.stream.efo.http-client.read-timeout", "invalid-integer");
+        defaultClientOptions.put("sink.http-client.read-timeout", "invalid-integer");
         KinesisClientOptionsUtils kinesisClientOptionsUtils =
                 new KinesisClientOptionsUtils(defaultClientOptions);
         thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage(
-                "Invalid value given for EFO HTTP read timeout. Must be positive integer.");
+                "Invalid value given for HTTP read timeout. Must be positive integer.");
         kinesisClientOptionsUtils.getValidatedConfigurations();
     }
 
     @Test
     public void testBadKinesisClientHttpVersion() {
-        Map<String, String> defaultClientOptions = getDefaultClientOptions();
-        defaultClientOptions.put("sink.client.http.protocol.version", "invalid-http-protocol");
+        Map<String, String> defaultProperties = getDefaultClientOptions();
+        defaultProperties.put("sink.http-client.protocol.version", "invalid-http-protocol");
         KinesisClientOptionsUtils kinesisClientOptionsUtils =
-                new KinesisClientOptionsUtils(defaultClientOptions);
+                new KinesisClientOptionsUtils(defaultProperties);
         thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage("Invalid value given for HTTP protocol. Must be HTTP1_1 or HTTP2.");
         kinesisClientOptionsUtils.getValidatedConfigurations();
@@ -105,9 +103,9 @@ public class KinesisClientOptionsUtilsTest {
 
     private static Map<String, String> getDefaultClientOptions() {
         Map<String, String> defaultKinesisClientOptions = new HashMap<String, String>();
-        defaultKinesisClientOptions.put("sink.client.stream.efo.http-client.max-concurrency", "4");
-        defaultKinesisClientOptions.put("sink.client.stream.efo.http-client.read-timeout", "1000");
-        defaultKinesisClientOptions.put("sink.client.http.protocol.version", "HTTP1_1");
+        defaultKinesisClientOptions.put("sink.http-client.max-concurrency", "10000");
+        defaultKinesisClientOptions.put("sink.http-client.read-timeout", "360000");
+        defaultKinesisClientOptions.put("sink.http-client.protocol.version", "HTTP2");
         return defaultKinesisClientOptions;
     }
 
@@ -115,20 +113,20 @@ public class KinesisClientOptionsUtilsTest {
         Map<String, String> defaultExpectedKinesisClientConfigurations =
                 new HashMap<String, String>();
         defaultExpectedKinesisClientConfigurations.put(
-                "flink.stream.efo.http-client.max-concurrency", "4");
+                "flink.stream.kinesis.http-client.max-concurrency", "10000");
         defaultExpectedKinesisClientConfigurations.put(
-                "flink.stream.efo.http-client.read-timeout", "1000");
-        defaultExpectedKinesisClientConfigurations.put("http.protocol.version", "HTTP1_1");
+                "flink.stream.kinesis.http-client.read-timeout", "360000");
+        defaultExpectedKinesisClientConfigurations.put("aws.http.protocol.version", "HTTP2");
         return defaultExpectedKinesisClientConfigurations;
     }
 
     private static Properties getDefaultExpectedClientConfigs() {
         Properties defaultExpectedKinesisClientConfigurations = new Properties();
         defaultExpectedKinesisClientConfigurations.put(
-                "flink.stream.efo.http-client.max-concurrency", "4");
+                "flink.stream.kinesis.http-client.max-concurrency", "10000");
         defaultExpectedKinesisClientConfigurations.put(
-                "flink.stream.efo.http-client.read-timeout", "1000");
-        defaultExpectedKinesisClientConfigurations.put("http.protocol.version", "HTTP1_1");
+                "flink.stream.kinesis.http-client.read-timeout", "360000");
+        defaultExpectedKinesisClientConfigurations.put("aws.http.protocol.version", "HTTP2");
         return defaultExpectedKinesisClientConfigurations;
     }
 }

@@ -16,12 +16,11 @@
  * limitations under the License.
  */
 
-package org.apache.flink.streaming.connectors.kinesis.table.utils;
+package org.apache.flink.streaming.connectors.kinesis.table;
 
 import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.streaming.connectors.kinesis.util.KinesisConfigGeneralUtil;
-import org.apache.flink.table.connector.options.ConfigurationValidator;
-import org.apache.flink.table.connector.options.GeneralOptionsUtils;
+import org.apache.flink.streaming.connectors.kinesis.table.utils.AWSOptionsUtils;
+import org.apache.flink.streaming.connectors.kinesis.util.KinesisConfigUtil;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,13 +30,12 @@ import java.util.Properties;
 
 /** Class for handling Kinesis Consumer specific table options. */
 @PublicEvolving
-public class KinesisConsumerOptionsUtils extends AWSOptionsUtils
-        implements GeneralOptionsUtils, ConfigurationValidator {
+public class KinesisConsumerOptionsUtils extends AWSOptionsUtils {
 
     private final Map<String, String> resolvedOptions;
     private final String stream;
     /**
-     * Prefix for properties defined in {@link
+     * Prefix for properties defined in {
      * org.apache.flink.streaming.connectors.kinesis.config.ConsumerConfigConstants} that are
      * delegated to { org.apache.flink.streaming.connectors.kinesis.FlinkKinesisConsumer}.
      */
@@ -69,7 +67,7 @@ public class KinesisConsumerOptionsUtils extends AWSOptionsUtils
     public Properties getValidatedConfigurations() {
         Properties consumerProperties = super.getValidatedConfigurations();
         consumerProperties.putAll(this.getProcessedResolvedOptions());
-        KinesisConfigGeneralUtil.validateConsumerConfiguration(
+        KinesisConfigUtil.validateConsumerConfiguration(
                 consumerProperties, Collections.singletonList(stream));
         return consumerProperties;
     }

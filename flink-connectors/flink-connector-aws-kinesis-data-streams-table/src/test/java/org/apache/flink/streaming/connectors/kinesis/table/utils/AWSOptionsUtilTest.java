@@ -18,7 +18,7 @@
 
 package org.apache.flink.streaming.connectors.kinesis.table.utils;
 
-import org.apache.flink.streaming.connectors.kinesis.config.AWSConfigConstants;
+import org.apache.flink.connector.aws.config.AWSConfigConstants;
 
 import org.junit.Rule;
 import org.junit.Test;

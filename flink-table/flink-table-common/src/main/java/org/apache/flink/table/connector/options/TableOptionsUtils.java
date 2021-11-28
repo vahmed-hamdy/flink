@@ -21,15 +21,13 @@ package org.apache.flink.table.connector.options;
 import org.apache.flink.annotation.PublicEvolving;
 
 import java.util.List;
-import java.util.Properties;
+import java.util.Map;
 
-/** Interface for validation connector-specific options. */
+/** Interface to be implemented by utils handling specific set of options. */
 @PublicEvolving
-public interface ConnectorOptionsUtils {
+public interface TableOptionsUtils {
+
+    Map<String, String> getProcessedResolvedOptions();
 
     List<String> getNonValidatedPrefixes();
-
-    Properties getValidatedSourceConfigurations();
-
-    Properties getValidatedSinkConfigurations();
 }

@@ -19,10 +19,10 @@
 package org.apache.flink.streaming.connectors.kinesis.table.utils;
 
 import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.streaming.connectors.kinesis.config.AWSConfigConstants;
-import org.apache.flink.streaming.connectors.kinesis.util.KinesisConfigGeneralUtil;
+import org.apache.flink.connector.aws.config.AWSConfigConstants;
+import org.apache.flink.connector.aws.util.AWSGeneralUtil;
 import org.apache.flink.table.connector.options.ConfigurationValidator;
-import org.apache.flink.table.connector.options.GeneralOptionsUtils;
+import org.apache.flink.table.connector.options.TableOptionsUtils;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,7 +32,7 @@ import java.util.Properties;
 
 /** Handler for AWS specific table options. */
 @PublicEvolving
-public class AWSOptionsUtils implements GeneralOptionsUtils, ConfigurationValidator {
+public class AWSOptionsUtils implements TableOptionsUtils, ConfigurationValidator {
 
     private final Map<String, String> resolvedOptions;
 
@@ -40,10 +40,7 @@ public class AWSOptionsUtils implements GeneralOptionsUtils, ConfigurationValida
         this.resolvedOptions = resolvedOptions;
     }
 
-    /**
-     * Prefix for properties defined in {@link
-     * org.apache.flink.streaming.connectors.kinesis.config.AWSConfigConstants}.
-     */
+    /** Prefix for properties defined in {@link AWSConfigConstants}. */
     public static final String AWS_PROPERTIES_PREFIX = "aws.";
 
     @Override
@@ -89,7 +86,7 @@ public class AWSOptionsUtils implements GeneralOptionsUtils, ConfigurationValida
     }
 
     /** Validate configuration properties related to Amazon AWS service. */
-    public static void validateAwsConfiguration(Properties config) {
-        KinesisConfigGeneralUtil.validateAwsConfiguration(config);
+    private static void validateAwsConfiguration(Properties config) {
+        AWSGeneralUtil.validateAwsConfigurations(config);
     }
 }

@@ -16,17 +16,15 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.connector.options;
+package org.apache.flink.table;
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
-import org.apache.flink.connector.base.sink.AsyncSinkBase;
-import org.apache.flink.table.connector.sink.AsyncDynamicTableSinkFactory;
 
 /**
- * Optional Options for {@link AsyncDynamicTableSinkFactory} representing fields of {@link
- * AsyncSinkBase}.
+ * Optional Options for {@link org.apache.flink.table.factories.AsyncDynamicTableSinkFactory}
+ * representing fields of {@link org.apache.flink.connector.base.sink.AsyncSinkBase}.
  */
 @PublicEvolving
 public class AsyncSinkConnectorOptions {
@@ -44,13 +42,10 @@ public class AsyncSinkConnectorOptions {
                     .intType()
                     .noDefaultValue()
                     .withDescription(
-                            "Maximum number of uncompleted calls to submitRequestEntries that"
-                                    + " the SinkWriter will allow at any given point. Once this point has reached, writes and"
-                                    + " callbacks to add elements to the buffer may block until one or more requests to"
-                                    + " submitRequestEntries completes.");
+                            "Request threshold for uncompleted requests before blocking new write requests.");
 
     public static final ConfigOption<Integer> MAX_BUFFERED_REQUESTS =
-            ConfigOptions.key("sink.request.max-buffered")
+            ConfigOptions.key("sink.requests.max-buffered")
                     .intType()
                     .noDefaultValue()
                     .withDescription("Request buffer threshold for blocking new write requests.");

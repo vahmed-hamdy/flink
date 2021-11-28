@@ -36,7 +36,7 @@ public abstract class AsyncDynamicTableSinkBuilder<
     private Integer maxBatchSize;
     private Integer maxInFlightRequests;
     private Integer maxBufferedRequests;
-    private Long flushOnBufferSizeInBytes;
+    private Long maxBufferSizeInBytes;
     private Long maxTimeInBufferMS;
 
     /**
@@ -73,13 +73,13 @@ public abstract class AsyncDynamicTableSinkBuilder<
     }
 
     /**
-     * @param flushOnBufferSizeInBytes a flush will be attempted if the most recent call to write
+     * @param maxBufferSizeInBytes a flush will be attempted if the most recent call to write
      *     introduces an element to the buffer such that the total size of the buffer is greater
      *     than or equal to this threshold value.
      * @return {@link ConcreteBuilderT} itself
      */
-    public ConcreteBuilderT setFlushOnBufferSizeInBytes(long flushOnBufferSizeInBytes) {
-        this.flushOnBufferSizeInBytes = flushOnBufferSizeInBytes;
+    public ConcreteBuilderT setMaxBufferSizeInBytes(long maxBufferSizeInBytes) {
+        this.maxBufferSizeInBytes = maxBufferSizeInBytes;
         return (ConcreteBuilderT) this;
     }
 
@@ -111,8 +111,8 @@ public abstract class AsyncDynamicTableSinkBuilder<
         return maxBufferedRequests;
     }
 
-    protected Long getFlushOnBufferSizeInBytes() {
-        return flushOnBufferSizeInBytes;
+    protected Long getMaxBufferSizeInBytes() {
+        return maxBufferSizeInBytes;
     }
 
     protected Long getMaxTimeInBufferMS() {

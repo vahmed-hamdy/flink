@@ -35,19 +35,19 @@ public abstract class AsyncDynamicTableSink<RequestEntryT> implements DynamicTab
     protected final Integer maxBatchSize;
     protected final Integer maxInFlightRequests;
     protected final Integer maxBufferedRequests;
-    protected final Long flushOnBufferSizeInBytes;
+    protected final Long maxBufferSizeInBytes;
     protected final Long maxTimeInBufferMS;
 
     protected AsyncDynamicTableSink(
             @Nullable Integer maxBatchSize,
             @Nullable Integer maxInFlightRequests,
             @Nullable Integer maxBufferedRequests,
-            @Nullable Long flushOnBufferSizeInBytes,
+            @Nullable Long maxBufferSizeInBytes,
             @Nullable Long maxTimeInBufferMS) {
         this.maxBatchSize = maxBatchSize;
         this.maxInFlightRequests = maxInFlightRequests;
         this.maxBufferedRequests = maxBufferedRequests;
-        this.flushOnBufferSizeInBytes = flushOnBufferSizeInBytes;
+        this.maxBufferSizeInBytes = maxBufferSizeInBytes;
         this.maxTimeInBufferMS = maxTimeInBufferMS;
     }
 
@@ -67,7 +67,7 @@ public abstract class AsyncDynamicTableSink<RequestEntryT> implements DynamicTab
         return Objects.equals(maxBatchSize, that.maxBatchSize)
                 && Objects.equals(maxBufferedRequests, that.maxBufferedRequests)
                 && Objects.equals(maxInFlightRequests, that.maxInFlightRequests)
-                && Objects.equals(flushOnBufferSizeInBytes, that.flushOnBufferSizeInBytes)
+                && Objects.equals(maxBufferSizeInBytes, that.maxBufferSizeInBytes)
                 && Objects.equals(maxTimeInBufferMS, that.maxTimeInBufferMS);
     }
 
@@ -77,7 +77,7 @@ public abstract class AsyncDynamicTableSink<RequestEntryT> implements DynamicTab
                 maxBatchSize,
                 maxBufferedRequests,
                 maxInFlightRequests,
-                flushOnBufferSizeInBytes,
+                maxBufferSizeInBytes,
                 maxTimeInBufferMS);
     }
 }
