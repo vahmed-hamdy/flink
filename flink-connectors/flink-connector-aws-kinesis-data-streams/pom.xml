@@ -35,6 +35,7 @@ under the License.
 	<properties>
 		<aws.sdk.version>2.17.52</aws.sdk.version>
 		<aws.kinesis-kpl.version>0.14.1</aws.kinesis-kpl.version>
+		<testcontainers.version>1.16.2</testcontainers.version>
 	</properties>
 
 	<packaging>jar</packaging>
@@ -102,6 +103,7 @@ under the License.
 		<dependency>
 			<groupId>org.testcontainers</groupId>
 			<artifactId>testcontainers</artifactId>
+			<version>${testcontainers.version}</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
