@@ -20,9 +20,8 @@ package org.apache.flink.streaming.connectors.kinesis.table.utils;
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.aws.config.AWSConfigConstants;
-import org.apache.flink.connector.kinesis.config.AsyncProducerConfigConstants;
-import org.apache.flink.table.connector.options.ConfigurationValidator;
-import org.apache.flink.table.connector.options.TableOptionsUtils;
+import org.apache.flink.connector.base.table.options.ConfigurationValidator;
+import org.apache.flink.connector.base.table.options.TableOptionsUtils;
 
 import software.amazon.awssdk.http.Protocol;
 
@@ -78,25 +77,26 @@ public class KinesisClientOptionsUtils implements TableOptionsUtils, Configurati
 
     private static String translateClientKeys(String key) {
         String truncatedKey = key.substring(SINK_CLIENT_PREFIX.length());
-        if (truncatedKey.equals(CLIENT_MAX_CONCURRENCY_OPTION)) {
-            return AsyncProducerConfigConstants.HTTP_CLIENT_MAX_CONCURRENCY;
-        } else if (truncatedKey.equals(CLIENT_MAX_TIMEOUT_OPTION)) {
-            return AsyncProducerConfigConstants.HTTP_CLIENT_READ_TIMEOUT_MILLIS;
-        } else if (truncatedKey.equals(CLIENT_HTTP_PROTOCOL_VERSION_OPTION)) {
-            return AWSConfigConstants.HTTP_PROTOCOL_VERSION;
-        } else {
-            return truncatedKey;
+        switch (truncatedKey) {
+            case CLIENT_MAX_CONCURRENCY_OPTION:
+                return AWSConfigConstants.HTTP_CLIENT_MAX_CONCURRENCY;
+            case CLIENT_MAX_TIMEOUT_OPTION:
+                return AWSConfigConstants.HTTP_CLIENT_READ_TIMEOUT_MILLIS;
+            case CLIENT_HTTP_PROTOCOL_VERSION_OPTION:
+                return AWSConfigConstants.HTTP_PROTOCOL_VERSION;
+            default:
+                return truncatedKey;
         }
     }
 
     private static void validatedConfigurations(Properties config) {
         ConfigurationValidator.validateOptionalPositiveIntProperty(
                 config,
-                AsyncProducerConfigConstants.HTTP_CLIENT_MAX_CONCURRENCY,
+                AWSConfigConstants.HTTP_CLIENT_MAX_CONCURRENCY,
                 "Invalid value given for HTTP client max concurrency. Must be positive integer.");
         ConfigurationValidator.validateOptionalPositiveIntProperty(
                 config,
-                AsyncProducerConfigConstants.HTTP_CLIENT_READ_TIMEOUT_MILLIS,
+                AWSConfigConstants.HTTP_CLIENT_READ_TIMEOUT_MILLIS,
                 "Invalid value given for HTTP read timeout. Must be positive integer.");
         validateOptionalHttpProtocolProperty(config);
     }

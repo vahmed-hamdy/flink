@@ -21,8 +21,8 @@ package org.apache.flink.streaming.connectors.kinesis.table.utils;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.aws.config.AWSConfigConstants;
 import org.apache.flink.connector.aws.util.AWSGeneralUtil;
-import org.apache.flink.table.connector.options.ConfigurationValidator;
-import org.apache.flink.table.connector.options.TableOptionsUtils;
+import org.apache.flink.connector.base.table.options.ConfigurationValidator;
+import org.apache.flink.connector.base.table.options.TableOptionsUtils;
 
 import java.util.Collections;
 import java.util.HashMap;

@@ -323,6 +323,7 @@ under the License.
 								<includes>
 									<include>org.apache.flink:flink-connector-aws-base:*</include>
 									<include>org.apache.flink:flink-connector-aws-kinesis-data-streams:*</include>
+									<include>org.apache.flink:flink-connector-aws-kinesis-data-streams-table:*</include>
 									<include>com.amazonaws:*</include>
 									<include>com.google.protobuf:*</include>
 									<include>org.apache.httpcomponents:*</include>
@@ -422,6 +423,6 @@ under the License.
 					</systemPropertyVariables>
 				</configuration>
 			</plugin>
-		</plugins>
+        </plugins>
 	</build>
 </project>

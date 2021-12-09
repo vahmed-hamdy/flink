@@ -16,15 +16,15 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table;
+package org.apache.flink.connector.base.table;
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
 
 /**
- * Optional Options for {@link org.apache.flink.table.factories.AsyncDynamicTableSinkFactory}
- * representing fields of {@link org.apache.flink.connector.base.sink.AsyncSinkBase}.
+ * Optional Options for {@link AsyncDynamicTableSinkFactory} representing fields of {@link
+ * org.apache.flink.connector.base.sink.AsyncSinkBase}.
  */
 @PublicEvolving
 public class AsyncSinkConnectorOptions {

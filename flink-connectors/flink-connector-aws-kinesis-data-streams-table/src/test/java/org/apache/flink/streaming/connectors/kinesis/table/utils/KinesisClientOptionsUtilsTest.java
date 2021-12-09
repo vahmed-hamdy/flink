@@ -18,20 +18,17 @@
 
 package org.apache.flink.streaming.connectors.kinesis.table.utils;
 
-import org.junit.Rule;
+import org.apache.flink.connector.aws.config.AWSConfigConstants;
+
+import org.assertj.core.api.Assertions;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import static org.junit.Assert.assertEquals;
-
 /** Unit tests for {@link KinesisClientOptionsUtils}. */
 public class KinesisClientOptionsUtilsTest {
-
-    @Rule public ExpectedException thrown = ExpectedException.none();
 
     @Test
     public void testGoodKinesisClientOptionsMapping() {
@@ -41,19 +38,19 @@ public class KinesisClientOptionsUtilsTest {
         Map<String, String> expectedConfigurations = getDefaultExpectedClientOptions();
         Map<String, String> actualConfigurations =
                 kinesisClientOptionsUtils.getProcessedResolvedOptions();
-        assertEquals(expectedConfigurations, actualConfigurations);
+        Assertions.assertThat(actualConfigurations).isEqualTo(expectedConfigurations);
     }
 
     @Test
     public void testGoodKinesisClientOptionsSelectionAndMapping() {
         Map<String, String> defaultClientOptions = getDefaultClientOptions();
-        defaultClientOptions.put("sink.not.client.some.option", "someValue");
+        defaultClientOptions.put("sink.not.http-client.some.option", "someValue");
         KinesisClientOptionsUtils kinesisClientOptionsUtils =
                 new KinesisClientOptionsUtils(defaultClientOptions);
         Map<String, String> expectedConfigurations = getDefaultExpectedClientOptions();
         Map<String, String> actualConfigurations =
                 kinesisClientOptionsUtils.getProcessedResolvedOptions();
-        assertEquals(expectedConfigurations, actualConfigurations);
+        Assertions.assertThat(actualConfigurations).isEqualTo(expectedConfigurations);
     }
 
     @Test
@@ -63,7 +60,7 @@ public class KinesisClientOptionsUtilsTest {
                 new KinesisClientOptionsUtils(defaultClientOptions);
         Properties expectedConfigurations = getDefaultExpectedClientConfigs();
         Properties actualConfigurations = kinesisClientOptionsUtils.getValidatedConfigurations();
-        assertEquals(expectedConfigurations, actualConfigurations);
+        Assertions.assertThat(actualConfigurations).isEqualTo(expectedConfigurations);
     }
 
     @Test
@@ -72,10 +69,10 @@ public class KinesisClientOptionsUtilsTest {
         defaultClientOptions.put("sink.http-client.max-concurrency", "invalid-integer");
         KinesisClientOptionsUtils kinesisClientOptionsUtils =
                 new KinesisClientOptionsUtils(defaultClientOptions);
-        thrown.expect(IllegalArgumentException.class);
-        thrown.expectMessage(
-                "Invalid value given for HTTP client max concurrency. Must be positive integer.");
-        kinesisClientOptionsUtils.getValidatedConfigurations();
+        Assertions.assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(kinesisClientOptionsUtils::getValidatedConfigurations)
+                .withMessageContaining(
+                        "Invalid value given for HTTP client max concurrency. Must be positive integer.");
     }
 
     @Test
@@ -84,10 +81,10 @@ public class KinesisClientOptionsUtilsTest {
         defaultClientOptions.put("sink.http-client.read-timeout", "invalid-integer");
         KinesisClientOptionsUtils kinesisClientOptionsUtils =
                 new KinesisClientOptionsUtils(defaultClientOptions);
-        thrown.expect(IllegalArgumentException.class);
-        thrown.expectMessage(
-                "Invalid value given for HTTP read timeout. Must be positive integer.");
-        kinesisClientOptionsUtils.getValidatedConfigurations();
+        Assertions.assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(kinesisClientOptionsUtils::getValidatedConfigurations)
+                .withMessageContaining(
+                        "Invalid value given for HTTP read timeout. Must be positive integer.");
     }
 
     @Test
@@ -96,9 +93,10 @@ public class KinesisClientOptionsUtilsTest {
         defaultProperties.put("sink.http-client.protocol.version", "invalid-http-protocol");
         KinesisClientOptionsUtils kinesisClientOptionsUtils =
                 new KinesisClientOptionsUtils(defaultProperties);
-        thrown.expect(IllegalArgumentException.class);
-        thrown.expectMessage("Invalid value given for HTTP protocol. Must be HTTP1_1 or HTTP2.");
-        kinesisClientOptionsUtils.getValidatedConfigurations();
+        Assertions.assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(kinesisClientOptionsUtils::getValidatedConfigurations)
+                .withMessageContaining(
+                        "Invalid value given for HTTP protocol. Must be HTTP1_1 or HTTP2.");
     }
 
     private static Map<String, String> getDefaultClientOptions() {
@@ -113,20 +111,22 @@ public class KinesisClientOptionsUtilsTest {
         Map<String, String> defaultExpectedKinesisClientConfigurations =
                 new HashMap<String, String>();
         defaultExpectedKinesisClientConfigurations.put(
-                "flink.stream.kinesis.http-client.max-concurrency", "10000");
+                AWSConfigConstants.HTTP_CLIENT_MAX_CONCURRENCY, "10000");
         defaultExpectedKinesisClientConfigurations.put(
-                "flink.stream.kinesis.http-client.read-timeout", "360000");
-        defaultExpectedKinesisClientConfigurations.put("aws.http.protocol.version", "HTTP2");
+                AWSConfigConstants.HTTP_CLIENT_READ_TIMEOUT_MILLIS, "360000");
+        defaultExpectedKinesisClientConfigurations.put(
+                AWSConfigConstants.HTTP_PROTOCOL_VERSION, "HTTP2");
         return defaultExpectedKinesisClientConfigurations;
     }
 
     private static Properties getDefaultExpectedClientConfigs() {
         Properties defaultExpectedKinesisClientConfigurations = new Properties();
         defaultExpectedKinesisClientConfigurations.put(
-                "flink.stream.kinesis.http-client.max-concurrency", "10000");
+                AWSConfigConstants.HTTP_CLIENT_MAX_CONCURRENCY, "10000");
         defaultExpectedKinesisClientConfigurations.put(
-                "flink.stream.kinesis.http-client.read-timeout", "360000");
-        defaultExpectedKinesisClientConfigurations.put("aws.http.protocol.version", "HTTP2");
+                AWSConfigConstants.HTTP_CLIENT_READ_TIMEOUT_MILLIS, "360000");
+        defaultExpectedKinesisClientConfigurations.put(
+                AWSConfigConstants.HTTP_PROTOCOL_VERSION, "HTTP2");
         return defaultExpectedKinesisClientConfigurations;
     }
 }

@@ -16,12 +16,12 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.connector.sink.options;
+package org.apache.flink.connector.base.table.sink.options;
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.configuration.ReadableConfig;
-import org.apache.flink.table.AsyncSinkConnectorOptions;
-import org.apache.flink.table.connector.options.ConfigurationValidator;
+import org.apache.flink.connector.base.table.AsyncSinkConnectorOptions;
+import org.apache.flink.connector.base.table.options.ConfigurationValidator;
 
 import java.util.Properties;
 

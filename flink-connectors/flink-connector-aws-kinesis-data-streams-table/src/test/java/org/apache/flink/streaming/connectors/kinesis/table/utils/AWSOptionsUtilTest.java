@@ -20,6 +20,7 @@ package org.apache.flink.streaming.connectors.kinesis.table.utils;
 
 import org.apache.flink.connector.aws.config.AWSConfigConstants;
 
+import org.assertj.core.api.Assertions;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -27,8 +28,6 @@ import org.junit.rules.ExpectedException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-
-import static org.junit.Assert.assertEquals;
 
 /** Unit tests for {@link AWSOptionsUtils}. */
 public class AWSOptionsUtilTest {
@@ -40,7 +39,7 @@ public class AWSOptionsUtilTest {
         AWSOptionsUtils awsOptionsUtils = new AWSOptionsUtils(getDefaultAWSConfigurations());
         Map<String, String> actualMappedProperties = awsOptionsUtils.getProcessedResolvedOptions();
         Map<String, String> expectedProperties = getDefaultExpectedAWSConfigurations();
-        assertEquals(actualMappedProperties, expectedProperties);
+        Assertions.assertThat(actualMappedProperties).isEqualTo(expectedProperties);
     }
 
     @Test
@@ -53,7 +52,7 @@ public class AWSOptionsUtilTest {
         AWSOptionsUtils awsOptionsUtils = new AWSOptionsUtils(resolvedTableOptions);
         Map<String, String> actualMappedProperties = awsOptionsUtils.getProcessedResolvedOptions();
         Map<String, String> expectedProperties = getDefaultExpectedAWSConfigurations();
-        assertEquals(actualMappedProperties, expectedProperties);
+        Assertions.assertThat(actualMappedProperties).isEqualTo(expectedProperties);
     }
 
     @Test
@@ -62,7 +61,7 @@ public class AWSOptionsUtilTest {
         Properties expectedProperties = new Properties();
         expectedProperties.putAll(getDefaultExpectedAWSConfigurations());
         Properties actualProperties = awsOptionsUtils.getValidatedConfigurations();
-        assertEquals(actualProperties, expectedProperties);
+        Assertions.assertThat(actualProperties).isEqualTo(expectedProperties);
     }
 
     @Test
@@ -70,9 +69,9 @@ public class AWSOptionsUtilTest {
         Map<String, String> defaultProperties = getDefaultAWSConfigurations();
         defaultProperties.put("aws.region", "invalid-aws-region");
         AWSOptionsUtils awsOptionsUtils = new AWSOptionsUtils(defaultProperties);
-        thrown.expect(IllegalArgumentException.class);
-        thrown.expectMessage("Invalid AWS region set in config.");
-        awsOptionsUtils.getValidatedConfigurations();
+        Assertions.assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(awsOptionsUtils::getValidatedConfigurations)
+                .withMessageContaining("Invalid AWS region set in config.");
     }
 
     @Test
@@ -80,15 +79,14 @@ public class AWSOptionsUtilTest {
         Map<String, String> defaultProperties = getDefaultAWSConfigurations();
         defaultProperties.remove("aws.credentials.basic.accesskeyid");
         AWSOptionsUtils awsOptionsUtils = new AWSOptionsUtils(defaultProperties);
-        thrown.expect(IllegalArgumentException.class);
-        thrown.expectMessage(
-                "Please set values for AWS Access Key ID ('"
-                        + AWSConfigConstants.AWS_ACCESS_KEY_ID
-                        + "') "
-                        + "and Secret Key ('"
-                        + AWSConfigConstants.AWS_SECRET_ACCESS_KEY
-                        + "') when using the BASIC AWS credential provider type.");
-        awsOptionsUtils.getValidatedConfigurations();
+        Assertions.assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(awsOptionsUtils::getValidatedConfigurations)
+                .withMessageContaining(
+                        String.format(
+                                "Please set values for AWS Access Key ID ('%s') "
+                                        + "and Secret Key ('%s') when using the BASIC AWS credential provider type.",
+                                AWSConfigConstants.AWS_ACCESS_KEY_ID,
+                                AWSConfigConstants.AWS_SECRET_ACCESS_KEY));
     }
 
     @Test
@@ -96,12 +94,12 @@ public class AWSOptionsUtilTest {
         Map<String, String> defaultProperties = getDefaultAWSConfigurations();
         defaultProperties.put("aws.trust.all.certificates", "invalid-boolean");
         AWSOptionsUtils awsOptionsUtils = new AWSOptionsUtils(defaultProperties);
-        thrown.expect(IllegalArgumentException.class);
-        thrown.expectMessage(
-                String.format(
-                        "Invalid %s value, must be a boolean.",
-                        AWSConfigConstants.TRUST_ALL_CERTIFICATES));
-        awsOptionsUtils.getValidatedConfigurations();
+        Assertions.assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(awsOptionsUtils::getValidatedConfigurations)
+                .withMessageContaining(
+                        String.format(
+                                "Invalid %s value, must be a boolean.",
+                                AWSConfigConstants.TRUST_ALL_CERTIFICATES));
     }
 
     private static Map<String, String> getDefaultAWSConfigurations() {

@@ -23,8 +23,8 @@ import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ReadableConfig;
+import org.apache.flink.connector.base.table.AsyncDynamicTableSinkFactory;
 import org.apache.flink.connector.kinesis.sink.KinesisDataStreamsSinkElementConverter;
-import org.apache.flink.table.AsyncSinkConnectorOptions;
 import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.table.catalog.CatalogTable;
 import org.apache.flink.table.catalog.ResolvedCatalogTable;
@@ -33,7 +33,6 @@ import org.apache.flink.table.connector.format.EncodingFormat;
 import org.apache.flink.table.connector.sink.DynamicTableSink;
 import org.apache.flink.table.connector.source.DynamicTableSource;
 import org.apache.flink.table.data.RowData;
-import org.apache.flink.table.factories.AsyncDynamicTableSinkFactory;
 import org.apache.flink.table.factories.DeserializationFormatFactory;
 import org.apache.flink.table.factories.DynamicTableSinkFactory;
 import org.apache.flink.table.factories.DynamicTableSourceFactory;
@@ -61,8 +60,8 @@ public class KinesisDynamicTableFactory extends AsyncDynamicTableSinkFactory
         ResolvedCatalogTable catalogTable = context.getCatalogTable();
         DataType physicalDataType = catalogTable.getResolvedSchema().toPhysicalRowDataType();
 
-        KinesisConnectorOptionsGeneralUtils optionsUtils =
-                new KinesisConnectorOptionsGeneralUtils(
+        KinesisConnectorOptionsUtils optionsUtils =
+                new KinesisConnectorOptionsUtils(
                         catalogTable.getOptions(),
                         tableOptions,
                         (RowType) physicalDataType.getLogicalType(),
@@ -88,32 +87,28 @@ public class KinesisDynamicTableFactory extends AsyncDynamicTableSinkFactory
                 .setKinesisClientProperties(
                         (Properties)
                                 properties.get(
-                                        KinesisConnectorOptionsGeneralUtils
-                                                .KINESIS_CLIENT_PROPERTIES_KEY))
+                                        KinesisConnectorOptionsUtils.KINESIS_CLIENT_PROPERTIES_KEY))
                 .setEncodingFormat(encodingFormat)
                 .setConsumedDataType(physicalDataType)
                 .setPartitioner(
                         (KinesisDataStreamsSinkElementConverter.PartitionKeyGenerator<RowData>)
                                 properties.get(KinesisConnectorOptions.SINK_PARTITIONER.key()));
 
-        Optional.ofNullable(
-                        (Long) properties.get(AsyncSinkConnectorOptions.FLUSH_BUFFER_SIZE.key()))
+        Optional.ofNullable((Long) properties.get(KinesisConnectorOptions.FLUSH_BUFFER_SIZE.key()))
                 .ifPresent(builder::setMaxBufferSizeInBytes);
         Optional.ofNullable(
-                        (Long) properties.get(AsyncSinkConnectorOptions.FLUSH_BUFFER_TIMEOUT.key()))
+                        (Long) properties.get(KinesisConnectorOptions.FLUSH_BUFFER_TIMEOUT.key()))
                 .ifPresent(builder::setMaxTimeInBufferMS);
-        Optional.ofNullable(
-                        (Integer) properties.get(AsyncSinkConnectorOptions.MAX_BATCH_SIZE.key()))
+        Optional.ofNullable((Integer) properties.get(KinesisConnectorOptions.MAX_BATCH_SIZE.key()))
                 .ifPresent(builder::setMaxBatchSize);
         Optional.ofNullable(
                         (Integer)
-                                properties.get(
-                                        AsyncSinkConnectorOptions.MAX_BUFFERED_REQUESTS.key()))
+                                properties.get(KinesisConnectorOptions.MAX_BUFFERED_REQUESTS.key()))
                 .ifPresent(builder::setMaxBufferedRequests);
         Optional.ofNullable(
                         (Integer)
                                 properties.get(
-                                        AsyncSinkConnectorOptions.MAX_IN_FLIGHT_REQUESTS.key()))
+                                        KinesisConnectorOptions.MAX_IN_FLIGHT_REQUESTS.key()))
                 .ifPresent(builder::setMaxInFlightRequests);
         Optional.ofNullable(
                         (Boolean) properties.get(KinesisConnectorOptions.SINK_FAIL_ON_ERROR.key()))
@@ -132,8 +127,8 @@ public class KinesisDynamicTableFactory extends AsyncDynamicTableSinkFactory
         ReadableConfig tableOptions = helper.getOptions();
         ResolvedCatalogTable catalogTable = context.getCatalogTable();
         DataType physicalDataType = catalogTable.getResolvedSchema().toPhysicalRowDataType();
-        KinesisConnectorOptionsGeneralUtils optionsUtils =
-                new KinesisConnectorOptionsGeneralUtils(
+        KinesisConnectorOptionsUtils optionsUtils =
+                new KinesisConnectorOptionsUtils(
                         catalogTable.getOptions(),
                         tableOptions,
                         (RowType) physicalDataType.getLogicalType(),

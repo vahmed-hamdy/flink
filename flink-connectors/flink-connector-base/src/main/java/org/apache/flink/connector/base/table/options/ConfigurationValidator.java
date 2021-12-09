@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.connector.options;
+package org.apache.flink.connector.base.table.options;
 
 import org.apache.flink.annotation.PublicEvolving;
 

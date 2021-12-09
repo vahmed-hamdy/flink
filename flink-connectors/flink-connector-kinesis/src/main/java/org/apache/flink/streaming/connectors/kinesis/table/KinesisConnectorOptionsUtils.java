@@ -21,13 +21,12 @@ package org.apache.flink.streaming.connectors.kinesis.table;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.connector.aws.config.AWSConfigConstants;
+import org.apache.flink.connector.base.table.options.ConfigurationValidator;
+import org.apache.flink.connector.base.table.options.TableOptionsUtils;
+import org.apache.flink.connector.base.table.sink.options.AsyncSinkConfigurationValidator;
 import org.apache.flink.connector.kinesis.sink.KinesisDataStreamsSinkElementConverter;
 import org.apache.flink.streaming.connectors.kinesis.table.utils.AWSOptionsUtils;
 import org.apache.flink.streaming.connectors.kinesis.table.utils.KinesisClientOptionsUtils;
-import org.apache.flink.table.AsyncSinkConnectorOptions;
-import org.apache.flink.table.connector.options.ConfigurationValidator;
-import org.apache.flink.table.connector.options.TableOptionsUtils;
-import org.apache.flink.table.connector.sink.options.AsyncSinkConfigurationValidator;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.factories.FactoryUtil;
 import org.apache.flink.table.types.logical.RowType;
@@ -41,6 +40,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 
@@ -51,10 +51,9 @@ import java.util.Set;
  * set of options.
  */
 @Internal
-public class KinesisConnectorOptionsGeneralUtils extends AsyncSinkConfigurationValidator {
+public class KinesisConnectorOptionsUtils extends AsyncSinkConfigurationValidator {
 
-    private static final Logger LOG =
-            LoggerFactory.getLogger(KinesisConnectorOptionsGeneralUtils.class);
+    private static final Logger LOG = LoggerFactory.getLogger(KinesisConnectorOptionsUtils.class);
     private final AWSOptionsUtils awsOptionsUtils;
     private final KinesisClientOptionsUtils kinesisClientOptionsUtils;
     private final KinesisConsumerOptionsUtils kinesisConsumerOptionsUtils;
@@ -74,11 +73,11 @@ public class KinesisConnectorOptionsGeneralUtils extends AsyncSinkConfigurationV
                             KinesisConnectorOptions.SINK_PARTITIONER.key(),
                             KinesisConnectorOptions.SINK_FAIL_ON_ERROR.key(),
                             KinesisConnectorOptions.SINK_PARTITIONER_FIELD_DELIMITER.key(),
-                            AsyncSinkConnectorOptions.FLUSH_BUFFER_SIZE.key(),
-                            AsyncSinkConnectorOptions.FLUSH_BUFFER_TIMEOUT.key(),
-                            AsyncSinkConnectorOptions.MAX_BATCH_SIZE.key(),
-                            AsyncSinkConnectorOptions.MAX_BUFFERED_REQUESTS.key(),
-                            AsyncSinkConnectorOptions.MAX_IN_FLIGHT_REQUESTS.key()));
+                            KinesisConnectorOptions.FLUSH_BUFFER_SIZE.key(),
+                            KinesisConnectorOptions.FLUSH_BUFFER_TIMEOUT.key(),
+                            KinesisConnectorOptions.MAX_BATCH_SIZE.key(),
+                            KinesisConnectorOptions.MAX_BUFFERED_REQUESTS.key(),
+                            KinesisConnectorOptions.MAX_IN_FLIGHT_REQUESTS.key()));
 
     /**
      * Prefixes of properties that are validated by downstream components and should not be
@@ -92,7 +91,7 @@ public class KinesisConnectorOptionsGeneralUtils extends AsyncSinkConfigurationV
                 KinesisProducerOptionsMapper.KINESIS_PRODUCER_PREFIX
             };
 
-    public KinesisConnectorOptionsGeneralUtils(
+    public KinesisConnectorOptionsUtils(
             Map<String, String> options,
             ReadableConfig tableOptions,
             RowType physicalType,
@@ -184,16 +183,18 @@ public class KinesisConnectorOptionsGeneralUtils extends AsyncSinkConfigurationV
         static {
             kinesisProducerFallbackKeys.put(
                     "sink.producer.record-max-buffered-time",
-                    AsyncSinkConnectorOptions.FLUSH_BUFFER_TIMEOUT.key());
+                    KinesisConnectorOptions.FLUSH_BUFFER_TIMEOUT.key());
             kinesisProducerFallbackKeys.put(
                     "sink.producer.collection-max-size",
-                    AsyncSinkConnectorOptions.MAX_BATCH_SIZE.key());
+                    KinesisConnectorOptions.MAX_BATCH_SIZE.key());
             kinesisProducerFallbackKeys.put(
                     "sink.producer.collection-max-count",
-                    AsyncSinkConnectorOptions.MAX_IN_FLIGHT_REQUESTS.key());
+                    KinesisConnectorOptions.MAX_IN_FLIGHT_REQUESTS.key());
             kinesisProducerFallbackKeys.put(
                     "sink.producer.fail-on-error",
                     KinesisConnectorOptions.SINK_FAIL_ON_ERROR.key());
+            kinesisProducerFallbackKeys.put(
+                    "sink.producer.verify-certificate", AWSConfigConstants.TRUST_ALL_CERTIFICATES);
         }
 
         private final Map<String, String> resolvedOptions;
@@ -206,55 +207,72 @@ public class KinesisConnectorOptionsGeneralUtils extends AsyncSinkConfigurationV
         public Properties getValidatedConfigurations() {
             Properties properties = new Properties();
             properties.putAll(getProcessedResolvedOptions());
-            if (properties.containsKey(AsyncSinkConnectorOptions.FLUSH_BUFFER_TIMEOUT.key())) {
-                ConfigurationValidator.validateOptionalPositiveLongProperty(
-                        properties,
-                        AsyncSinkConnectorOptions.FLUSH_BUFFER_TIMEOUT.key(),
-                        properties.getProperty(
-                                AsyncSinkConnectorOptions.FLUSH_BUFFER_TIMEOUT.key()));
-                properties.put(
-                        AsyncSinkConnectorOptions.FLUSH_BUFFER_TIMEOUT.key(),
-                        Long.parseLong(
-                                properties.getProperty(
-                                        AsyncSinkConnectorOptions.FLUSH_BUFFER_TIMEOUT.key())));
-            }
 
-            if (properties.containsKey(AsyncSinkConnectorOptions.MAX_BATCH_SIZE.key())) {
-                ConfigurationValidator.validateOptionalPositiveIntProperty(
-                        properties,
-                        AsyncSinkConnectorOptions.MAX_BATCH_SIZE.key(),
-                        properties.getProperty(AsyncSinkConnectorOptions.MAX_BATCH_SIZE.key()));
-                properties.put(
-                        AsyncSinkConnectorOptions.MAX_BATCH_SIZE.key(),
-                        Integer.parseInt(
-                                properties.getProperty(
-                                        AsyncSinkConnectorOptions.MAX_BATCH_SIZE.key())));
-            }
+            Optional.ofNullable(
+                            properties.getProperty(
+                                    KinesisConnectorOptions.FLUSH_BUFFER_TIMEOUT.key()))
+                    .ifPresent(
+                            key -> {
+                                ConfigurationValidator.validateOptionalPositiveLongProperty(
+                                        properties,
+                                        KinesisConnectorOptions.FLUSH_BUFFER_TIMEOUT.key(),
+                                        key);
+                                properties.put(
+                                        KinesisConnectorOptions.FLUSH_BUFFER_TIMEOUT.key(),
+                                        Long.parseLong(key));
+                            });
 
-            if (properties.containsKey(AsyncSinkConnectorOptions.MAX_IN_FLIGHT_REQUESTS.key())) {
-                ConfigurationValidator.validateOptionalPositiveIntProperty(
-                        properties,
-                        AsyncSinkConnectorOptions.MAX_IN_FLIGHT_REQUESTS.key(),
-                        properties.getProperty(
-                                AsyncSinkConnectorOptions.MAX_IN_FLIGHT_REQUESTS.key()));
-                properties.put(
-                        AsyncSinkConnectorOptions.MAX_IN_FLIGHT_REQUESTS.key(),
-                        Integer.parseInt(
-                                properties.getProperty(
-                                        AsyncSinkConnectorOptions.MAX_IN_FLIGHT_REQUESTS.key())));
-            }
+            Optional.ofNullable(
+                            properties.getProperty(KinesisConnectorOptions.MAX_BATCH_SIZE.key()))
+                    .ifPresent(
+                            key -> {
+                                ConfigurationValidator.validateOptionalPositiveIntProperty(
+                                        properties,
+                                        KinesisConnectorOptions.MAX_BATCH_SIZE.key(),
+                                        key);
+                                properties.put(
+                                        KinesisConnectorOptions.MAX_BATCH_SIZE.key(),
+                                        Integer.parseInt(key));
+                            });
 
-            if (properties.containsKey(KinesisConnectorOptions.SINK_FAIL_ON_ERROR.key())) {
-                ConfigurationValidator.validateOptionalBooleanProperty(
-                        properties,
-                        KinesisConnectorOptions.SINK_FAIL_ON_ERROR.key(),
-                        properties.getProperty(KinesisConnectorOptions.SINK_FAIL_ON_ERROR.key()));
-                properties.put(
-                        KinesisConnectorOptions.SINK_FAIL_ON_ERROR.key(),
-                        Boolean.parseBoolean(
-                                properties.getProperty(
-                                        KinesisConnectorOptions.SINK_FAIL_ON_ERROR.key())));
-            }
+            Optional.ofNullable(
+                            properties.getProperty(
+                                    KinesisConnectorOptions.MAX_IN_FLIGHT_REQUESTS.key()))
+                    .ifPresent(
+                            key -> {
+                                ConfigurationValidator.validateOptionalPositiveIntProperty(
+                                        properties,
+                                        KinesisConnectorOptions.MAX_IN_FLIGHT_REQUESTS.key(),
+                                        key);
+                                properties.put(
+                                        KinesisConnectorOptions.MAX_IN_FLIGHT_REQUESTS.key(),
+                                        Integer.parseInt(key));
+                            });
+
+            Optional.ofNullable(
+                            properties.getProperty(
+                                    KinesisConnectorOptions.SINK_FAIL_ON_ERROR.key()))
+                    .ifPresent(
+                            key -> {
+                                ConfigurationValidator.validateOptionalBooleanProperty(
+                                        properties,
+                                        KinesisConnectorOptions.SINK_FAIL_ON_ERROR.key(),
+                                        key);
+                                properties.put(
+                                        KinesisConnectorOptions.SINK_FAIL_ON_ERROR.key(),
+                                        Boolean.parseBoolean(key));
+                            });
+
+            Optional.ofNullable(properties.getProperty(AWSConfigConstants.TRUST_ALL_CERTIFICATES))
+                    .ifPresent(
+                            key -> {
+                                ConfigurationValidator.validateOptionalBooleanProperty(
+                                        properties, AWSConfigConstants.TRUST_ALL_CERTIFICATES, key);
+                                properties.put(
+                                        AWSConfigConstants.TRUST_ALL_CERTIFICATES,
+                                        Boolean.parseBoolean(key));
+                            });
+
             return properties;
         }
 
@@ -263,10 +281,12 @@ public class KinesisConnectorOptionsGeneralUtils extends AsyncSinkConfigurationV
             Map<String, String> processedResolvedOptions = new HashMap<>();
             for (String key : resolvedOptions.keySet()) {
                 if (key.startsWith(KINESIS_PRODUCER_PREFIX)) {
-                    if (kinesisProducerFallbackKeys.containsKey(key)) {
-                        processedResolvedOptions.put(
-                                kinesisProducerFallbackKeys.get(key), resolvedOptions.get(key));
-                    } else {
+                    Optional.ofNullable(kinesisProducerFallbackKeys.get(key))
+                            .ifPresent(
+                                    mappedKey ->
+                                            processedResolvedOptions.put(
+                                                    mappedKey, resolvedOptions.get(key)));
+                    if (!kinesisProducerFallbackKeys.containsKey(key)) {
                         LOG.warn(
                                 String.format(
                                         "Key %s is unsupported by Kinesis Datastream Sink", key));

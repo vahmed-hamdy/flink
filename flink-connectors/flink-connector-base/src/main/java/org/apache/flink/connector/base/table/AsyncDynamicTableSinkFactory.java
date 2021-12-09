@@ -16,11 +16,12 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.factories;
+package org.apache.flink.connector.base.table;
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.configuration.ConfigOption;
-import org.apache.flink.table.AsyncSinkConnectorOptions;
+import org.apache.flink.table.factories.DynamicTableFactory;
+import org.apache.flink.table.factories.DynamicTableSinkFactory;
 
 import java.util.HashSet;
 import java.util.Set;

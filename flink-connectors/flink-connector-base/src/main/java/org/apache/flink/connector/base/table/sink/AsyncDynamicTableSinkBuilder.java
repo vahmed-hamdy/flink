@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.connector.sink;
+package org.apache.flink.connector.base.table.sink;
 
 import org.apache.flink.annotation.PublicEvolving;
 

@@ -16,17 +16,19 @@
  * limitations under the License.
  */
 
-package org.apache.flink.table.connector.sink;
+package org.apache.flink.connector.base.table.sink;
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.base.sink.AsyncSinkBase;
+import org.apache.flink.table.connector.sink.DynamicTableSink;
 
 import javax.annotation.Nullable;
 
 import java.util.Objects;
 
 /**
- * Abstract wrapper class for {@link DynamicTableSink} with attributes of {@link AsyncSinkBase}.
+ * Abstract wrapper class for {@link DynamicTableSink} with attributes of {@link
+ * org.apache.flink.connector.base.sink.AsyncSinkBase}.
  *
  * @param <RequestEntryT> Request entry type for {@link AsyncSinkBase}.
  */
