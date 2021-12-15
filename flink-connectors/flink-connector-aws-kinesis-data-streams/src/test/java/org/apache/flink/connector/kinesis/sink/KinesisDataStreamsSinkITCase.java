@@ -30,6 +30,7 @@ import org.apache.flink.util.DockerImageVersions;
 import org.apache.flink.util.TestLogger;
 
 import org.assertj.core.api.Assertions;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -93,6 +94,11 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
         env.setParallelism(1);
 
         kinesisClient = KINESALITE.getHostClient();
+    }
+
+    @After
+    public void teardown() {
+        System.clearProperty(SdkSystemSetting.CBOR_ENABLED.property());
     }
 
     @Test
