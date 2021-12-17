@@ -179,6 +179,8 @@ public class KinesisConnectorOptionsUtils extends AsyncSinkConfigurationValidato
             implements TableOptionsUtils, ConfigurationValidator {
         private static final String KINESIS_PRODUCER_PREFIX = "sink.producer.";
         private static final Map<String, String> kinesisProducerFallbackKeys = new HashMap<>();
+        private static final String KINESIS_PRODUCER_ENDPOINT = "sink.producer.kinesis-endpoint";
+        private static final String KINESIS_PRODUCER_PORT = "sink.producer.kinesis-port";
 
         static {
             kinesisProducerFallbackKeys.put(
@@ -293,6 +295,23 @@ public class KinesisConnectorOptionsUtils extends AsyncSinkConfigurationValidato
                     }
                 }
             }
+
+            if (!resolvedOptions.containsKey(AWSConfigConstants.AWS_ENDPOINT)
+                    && resolvedOptions.containsKey(KINESIS_PRODUCER_ENDPOINT)) {
+                if (resolvedOptions.containsKey(KINESIS_PRODUCER_PORT)) {
+                    processedResolvedOptions.put(
+                            AWSConfigConstants.AWS_ENDPOINT,
+                            "https://"
+                                    + resolvedOptions.get(KINESIS_PRODUCER_ENDPOINT)
+                                    + ":"
+                                    + resolvedOptions.get(KINESIS_PRODUCER_PORT));
+                } else {
+                    processedResolvedOptions.put(
+                            AWSConfigConstants.AWS_ENDPOINT,
+                            "https://" + resolvedOptions.get(KINESIS_PRODUCER_ENDPOINT));
+                }
+            }
+
             return processedResolvedOptions;
         }
 
