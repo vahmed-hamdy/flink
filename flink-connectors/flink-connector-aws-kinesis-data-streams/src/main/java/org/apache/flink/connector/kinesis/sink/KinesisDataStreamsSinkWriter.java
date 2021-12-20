@@ -142,8 +142,11 @@ class KinesisDataStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRe
             Throwable err,
             List<PutRecordsRequestEntry> requestEntries,
             Consumer<Collection<PutRecordsRequestEntry>> requestResult) {
-        LOG.warn("KDS Sink failed to persist {} entries to KDS", requestEntries.size(), err);
-        LOG.warn(requestEntries.get(0).toString());
+        LOG.warn(
+                "KDS Sink failed to persist {} entries to KDS first request was {}",
+                requestEntries.size(),
+                requestEntries.get(0).toString(),
+                err);
         numRecordsOutErrorsCounter.inc(requestEntries.size());
 
         if (isRetryable(err)) {
@@ -155,8 +158,10 @@ class KinesisDataStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRe
             PutRecordsResponse response,
             List<PutRecordsRequestEntry> requestEntries,
             Consumer<Collection<PutRecordsRequestEntry>> requestResult) {
-        LOG.warn("KDS Sink failed to persist {} entries to KDS", response.failedRecordCount());
-        LOG.warn(requestEntries.get(0).toString());
+        LOG.warn(
+                "KDS Sink failed to persist {} entries to KDS first request was {}",
+                requestEntries.size(),
+                requestEntries.get(0).toString());
         numRecordsOutErrorsCounter.inc(response.failedRecordCount());
 
         if (failOnError) {
