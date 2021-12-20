@@ -143,6 +143,7 @@ class KinesisDataStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRe
             List<PutRecordsRequestEntry> requestEntries,
             Consumer<Collection<PutRecordsRequestEntry>> requestResult) {
         LOG.warn("KDS Sink failed to persist {} entries to KDS", requestEntries.size(), err);
+        LOG.warn(requestEntries.get(0).toString());
         numRecordsOutErrorsCounter.inc(requestEntries.size());
 
         if (isRetryable(err)) {
