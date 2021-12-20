@@ -29,6 +29,9 @@ import org.apache.flink.util.DockerImageVersions;
 import org.apache.flink.util.TestLogger;
 
 import org.apache.flink.shaded.guava30.com.google.common.collect.ImmutableList;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonProcessingException;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.dataformat.csv.CsvMapper;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.dataformat.csv.CsvSchema;
 
 import org.hamcrest.Matchers;
 import org.junit.After;
@@ -66,6 +69,8 @@ public class KinesisTableApiITCase extends TestLogger {
 
     private final Path sqlConnectorKinesisJar = TestUtils.getResource(".*kinesis.jar");
     private static final Network network = Network.newNetwork();
+
+    private CsvSchema schema = CsvSchema.builder().addColumn("code").addColumn("quantity").build();
 
     @ClassRule public static final Timeout TIMEOUT = new Timeout(10, TimeUnit.MINUTES);
 
@@ -161,12 +166,21 @@ public class KinesisTableApiITCase extends TestLogger {
     }
 
     private Order fromCSV(final String orderCSV) {
-        String[] orderfields = orderCSV.split(",");
-        return new Order(orderfields[0], Integer.parseInt(orderfields[1]));
+        CsvMapper mapper = new CsvMapper();
+        try {
+            return mapper.readerFor(Order.class).with(schema).readValue(orderCSV);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Test Failure.", e);
+        }
     }
 
     private String toCSV(final Order order) {
-        return order.getCode() + "," + order.getQuantity();
+
+        try {
+            return new CsvMapper().writerFor(Order.class).with(schema).writeValueAsString(order);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Test Failure.", e);
+        }
     }
 
     //    private <T> String toJson(final T object) {
