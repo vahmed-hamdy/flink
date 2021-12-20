@@ -177,7 +177,10 @@ public class KinesisTableApiITCase extends TestLogger {
     private String toCSV(final Order order) {
 
         try {
-            return new CsvMapper().writerFor(Order.class).with(schema).writeValueAsString(order);
+            String csvString =
+                    new CsvMapper().writerFor(Order.class).with(schema).writeValueAsString(order);
+            LOGGER.warn("CSV ISS " + csvString);
+            return csvString;
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Test Failure.", e);
         }
