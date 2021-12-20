@@ -43,10 +43,10 @@ CREATE TABLE large_orders (
   'aws.credentials.basic.accesskeyid'='access key',
   'aws.credentials.basic.secretkey' = 'secret key',
   'aws.endpoint' = 'https://kinesalite:4567',
-  'sink.producer.verify-certificate' = 'false',
-  'sink.producer.kinesis-port' = '4567',
-  'sink.producer.kinesis-endpoint' = 'kinesalite',
-  'sink.producer.aggregation-enabled' = 'false',
+  'aws.trust.all.certificates' = 'true',
+--   'sink.producer.kinesis-port' = '4567',
+--   'sink.producer.kinesis-endpoint' = 'kinesalite',
+--   'sink.producer.aggregation-enabled' = 'false',
   'format' = 'json'
 );
 
