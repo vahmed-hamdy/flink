@@ -29,7 +29,7 @@ CREATE TABLE orders (
   'scan.stream.initpos' = 'TRIM_HORIZON',
   'scan.shard.discovery.intervalmillis' = '1000',
   'scan.shard.adaptivereads' = 'true',
-  'format' = 'raw'
+  'format' = 'csv'
 );
 
 CREATE TABLE large_orders (
@@ -48,7 +48,7 @@ CREATE TABLE large_orders (
 --   'sink.producer.kinesis-port' = '4567',
 --   'sink.producer.kinesis-endpoint' = 'kinesalite',
 --   'sink.producer.aggregation-enabled' = 'false',
-  'format' = 'raw'
+  'format' = 'csv'
 );
 
 INSERT INTO large_orders SELECT * FROM orders WHERE quantity > 10;
