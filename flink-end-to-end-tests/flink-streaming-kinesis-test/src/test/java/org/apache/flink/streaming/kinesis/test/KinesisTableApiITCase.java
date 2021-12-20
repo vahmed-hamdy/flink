@@ -29,8 +29,6 @@ import org.apache.flink.util.DockerImageVersions;
 import org.apache.flink.util.TestLogger;
 
 import org.apache.flink.shaded.guava30.com.google.common.collect.ImmutableList;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonProcessingException;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.dataformat.csv.CsvSchema;
 
 import org.hamcrest.Matchers;
@@ -166,21 +164,13 @@ public class KinesisTableApiITCase extends TestLogger {
     }
 
     private Order fromCSV(final String orderCSV) {
-        CsvMapper mapper = new CsvMapper();
-        try {
-            return mapper.readerFor(Order.class).with(schema).readValue(orderCSV);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Test Failure.", e);
-        }
+        String[] orderfields = orderCSV.split(",");
+        return new Order(orderfields[0], Integer.parseInt(orderfields[1]));
     }
 
     private String toCSV(final Order order) {
 
-        try {
-            return new CsvMapper().writerFor(Order.class).with(schema).writeValueAsString(order);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Test Failure.", e);
-        }
+        return order.getCode() + "," + order.getQuantity() + "\n";
     }
 
     //    private <T> String toJson(final T object) {
