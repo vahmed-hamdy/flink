@@ -30,8 +30,6 @@ import org.apache.flink.util.TestLogger;
 
 import org.apache.flink.shaded.guava30.com.google.common.collect.ImmutableList;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -126,8 +124,8 @@ public class KinesisTableApiITCase extends TestLogger {
         List<Order> expected =
                 ImmutableList.of(new Order("C", 15), new Order("D", 20), new Order("E", 25));
 
-        smallOrders.forEach(order -> kinesisClient.sendMessage(ORDERS_STREAM, toJson(order)));
-        expected.forEach(order -> kinesisClient.sendMessage(ORDERS_STREAM, toJson(order)));
+        smallOrders.forEach(order -> kinesisClient.sendMessage(ORDERS_STREAM, toCSV(order)));
+        expected.forEach(order -> kinesisClient.sendMessage(ORDERS_STREAM, toCSV(order)));
 
         executeSqlStatements(readSqlFile("filter-large-orders.sql"));
 
@@ -144,7 +142,7 @@ public class KinesisTableApiITCase extends TestLogger {
             Thread.sleep(1000);
             orders =
                     client.readAllMessages(LARGE_ORDERS_STREAM).stream()
-                            .map(order -> fromJson(order, Order.class))
+                            .map(order -> fromCSV(order))
                             .collect(Collectors.toList());
         } while (deadline.hasTimeLeft() && orders.size() < 3);
 
@@ -162,19 +160,28 @@ public class KinesisTableApiITCase extends TestLogger {
                         .build());
     }
 
-    private <T> String toJson(final T object) {
-        try {
-            return new ObjectMapper().writeValueAsString(object);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Test Failure.", e);
-        }
+    private Order fromCSV(final String orderCSV) {
+        String[] orderfields = orderCSV.split(",");
+        return new Order(orderfields[0], Integer.parseInt(orderfields[1]));
     }
 
-    private <T> T fromJson(final String json, final Class<T> type) {
-        try {
-            return new ObjectMapper().readValue(json, type);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Test Failure.", e);
-        }
+    private String toCSV(final Order order) {
+        return order.getCode() + "," + order.getQuantity();
     }
+
+    //    private <T> String toJson(final T object) {
+    //        try {
+    //            return new ObjectMapper().writeValueAsString(object);
+    //        } catch (JsonProcessingException e) {
+    //            throw new RuntimeException("Test Failure.", e);
+    //        }
+    //    }
+    //
+    //    private <T> T fromJson(final String json, final Class<T> type) {
+    //        try {
+    //            return new ObjectMapper().readValue(json, type);
+    //        } catch (JsonProcessingException e) {
+    //            throw new RuntimeException("Test Failure.", e);
+    //        }
+    //    }
 }
