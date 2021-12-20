@@ -29,7 +29,7 @@ CREATE TABLE orders (
   'scan.stream.initpos' = 'TRIM_HORIZON',
   'scan.shard.discovery.intervalmillis' = '1000',
   'scan.shard.adaptivereads' = 'true',
-  'format' = 'json'
+  'format' = 'csv'
 );
 
 CREATE TABLE large_orders (
