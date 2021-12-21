@@ -33,8 +33,8 @@ CREATE TABLE orders (
 );
 
 CREATE TABLE large_orders (
-  `code` STRING
---       `quantity` BIGINT
+  `code` STRING,
+  `quantity` BIGINT
 ) WITH (
   'connector' = 'kinesis',
   'stream' = 'large_orders',
@@ -46,10 +46,11 @@ CREATE TABLE large_orders (
   'aws.trust.all.certificates' = 'true',
   'sink.http-client.protocol.version' = 'HTTP1_1',
   'sink.batch.max-size' = '1',
+  'sink.fail-on-error' = 'true',
 --   'sink.producer.kinesis-port' = '4567',
 --   'sink.producer.kinesis-endpoint' = 'kinesalite',
 --   'sink.producer.aggregation-enabled' = 'false',
   'format' = 'csv'
 );
 
-INSERT INTO large_orders SELECT code FROM orders WHERE quantity > 10;
+INSERT INTO large_orders SELECT * FROM orders WHERE quantity > 10;
