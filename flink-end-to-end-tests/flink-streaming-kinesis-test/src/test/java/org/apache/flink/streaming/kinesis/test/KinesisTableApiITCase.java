@@ -44,9 +44,11 @@ import org.junit.rules.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.Network;
+import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.core.SdkSystemSetting;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -129,8 +131,8 @@ public class KinesisTableApiITCase extends TestLogger {
         List<Order> expected =
                 ImmutableList.of(new Order("C", 15), new Order("D", 20), new Order("E", 25));
 
-        smallOrders.forEach(order -> kinesisClient.sendMessage(ORDERS_STREAM, toCSV(order)));
-        expected.forEach(order -> kinesisClient.sendMessage(ORDERS_STREAM, toCSV(order)));
+        smallOrders.forEach(order -> kinesisClient.sendMessage(ORDERS_STREAM, toJson(order)));
+        expected.forEach(order -> kinesisClient.sendMessage(ORDERS_STREAM, toJson(order)));
 
         executeSqlStatements(readSqlFile("filter-large-orders.sql"));
 
@@ -147,7 +149,7 @@ public class KinesisTableApiITCase extends TestLogger {
             Thread.sleep(1000);
             orders =
                     client.readAllMessages(LARGE_ORDERS_STREAM).stream()
-                            .map(order -> fromCSV(order))
+                            .map(order -> fromJson(order, Order.class))
                             .collect(Collectors.toList());
         } while (deadline.hasTimeLeft() && orders.size() < 3);
 
@@ -186,19 +188,19 @@ public class KinesisTableApiITCase extends TestLogger {
         }
     }
 
-    //    private <T> String toJson(final T object) {
-    //        try {
-    //            return new ObjectMapper().writeValueAsString(object);
-    //        } catch (JsonProcessingException e) {
-    //            throw new RuntimeException("Test Failure.", e);
-    //        }
-    //    }
-    //
-    //    private <T> T fromJson(final String json, final Class<T> type) {
-    //        try {
-    //            return new ObjectMapper().readValue(json, type);
-    //        } catch (JsonProcessingException e) {
-    //            throw new RuntimeException("Test Failure.", e);
-    //        }
-    //    }
+    private <T> String toJson(final T object) {
+        try {
+            return new ObjectMapper().writeValueAsString(object);
+        } catch (org.testcontainers.shaded.com.fasterxml.jackson.core.JsonProcessingException e) {
+            throw new RuntimeException("Test Failure.", e);
+        }
+    }
+
+    private <T> T fromJson(final String json, final Class<T> type) {
+        try {
+            return new ObjectMapper().readValue(json, type);
+        } catch (IOException e) {
+            throw new RuntimeException("Test Failure.", e);
+        }
+    }
 }
