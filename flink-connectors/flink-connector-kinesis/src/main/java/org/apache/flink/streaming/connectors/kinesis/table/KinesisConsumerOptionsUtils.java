@@ -19,7 +19,7 @@
 package org.apache.flink.streaming.connectors.kinesis.table;
 
 import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.streaming.connectors.kinesis.table.utils.AWSOptionsUtils;
+import org.apache.flink.connectors.kinesis.table.utils.AWSOptionsUtils;
 import org.apache.flink.streaming.connectors.kinesis.util.KinesisConfigUtil;
 
 import java.util.Arrays;

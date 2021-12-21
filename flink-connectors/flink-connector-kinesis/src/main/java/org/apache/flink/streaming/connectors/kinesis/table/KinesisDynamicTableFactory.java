@@ -25,6 +25,8 @@ import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.connector.base.table.AsyncDynamicTableSinkFactory;
 import org.apache.flink.connector.kinesis.sink.KinesisDataStreamsSinkElementConverter;
+import org.apache.flink.connectors.kinesis.table.KinesisConnectorOptions;
+import org.apache.flink.connectors.kinesis.table.KinesisDynamicSink;
 import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.table.catalog.CatalogTable;
 import org.apache.flink.table.catalog.ResolvedCatalogTable;
