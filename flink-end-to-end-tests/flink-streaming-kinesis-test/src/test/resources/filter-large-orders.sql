@@ -33,8 +33,8 @@ CREATE TABLE orders (
 );
 
 CREATE TABLE large_orders (
-  `code` STRING,
-  `quantity` BIGINT
+  `code` STRING
+--       `quantity` BIGINT
 ) WITH (
   'connector' = 'kinesis',
   'stream' = 'large_orders',
