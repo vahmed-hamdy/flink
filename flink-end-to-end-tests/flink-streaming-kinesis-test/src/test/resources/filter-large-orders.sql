@@ -39,7 +39,7 @@ CREATE TABLE large_orders (
   'connector' = 'kinesis',
   'stream' = 'large_orders',
   'aws.region' = 'us-east-1',
-  'aws.credentials.provider' = 'BASIC',
+--   'aws.credentials.provider' = 'BASIC',
   'aws.credentials.basic.accesskeyid'='access key',
   'aws.credentials.basic.secretkey' = 'secret key',
   'aws.endpoint' = 'https://kinesalite:4567',
