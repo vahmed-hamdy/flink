@@ -27,6 +27,7 @@ import org.apache.flink.metrics.groups.SinkWriterMetricGroup;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.core.SdkSystemSetting;
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequest;
@@ -101,6 +102,7 @@ class KinesisDataStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRe
     }
 
     private KinesisAsyncClient buildClient(Properties kinesisClientProperties) {
+        System.setProperty(SdkSystemSetting.CBOR_ENABLED.property(), "false");
 
         final SdkAsyncHttpClient httpClient =
                 AWSGeneralUtil.createAsyncHttpClient(kinesisClientProperties);
