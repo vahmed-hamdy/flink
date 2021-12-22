@@ -82,6 +82,7 @@ public class KinesisTableApiITCase extends TestLogger {
     public static final FlinkContainers FLINK =
             FlinkContainers.builder()
                     .setEnvironmentVariable("AWS_ACCESS_KEY_ID", KINESALITE.getAccessKey())
+                    .setEnvironmentVariable("AWS_SECRET_ACCESS_KEY", KINESALITE.getSecretKey())
                     .setEnvironmentVariable("AWS_SECRET_KEY", KINESALITE.getSecretKey())
                     .setEnvironmentVariable("AWS_CBOR_DISABLE", "1")
                     .setEnvironmentVariable(

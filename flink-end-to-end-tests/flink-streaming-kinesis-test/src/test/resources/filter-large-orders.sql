@@ -33,14 +33,21 @@ CREATE TABLE large_orders (
   `code` STRING,
   `quantity` BIGINT
 ) WITH (
-  'connector' = 'kinesis',
-  'stream' = 'large_orders',
-  'aws.region' = 'us-east-1',
-  'sink.producer.verify-certificate' = 'false',
-  'sink.producer.kinesis-port' = '4567',
-  'sink.producer.kinesis-endpoint' = 'kinesalite',
-  'sink.producer.aggregation-enabled' = 'false',
-  'format' = 'json'
+    'connector' = 'kinesis',
+    'stream' = 'large_orders',
+    'aws.region' = 'us-east-1',
+    'aws.credentials.provider' = 'BASIC',
+    'aws.credentials.basic.accesskeyid'='access_key',
+    'aws.credentials.basic.secretkey' = 'secret_key',
+    'aws.endpoint' = 'https://kinesalite:4567',
+--     'aws.trust.all.certificates' = 'true',
+--     'sink.http-client.protocol.version' = 'HTTP1_1',
+--     'sink.batch.max-size' = '1',
+--     'sink.fail-on-error' = 'true',
+--   'sink.producer.kinesis-port' = '4567',
+--   'sink.producer.kinesis-endpoint' = 'kinesalite',
+--   'sink.producer.aggregation-enabled' = 'false',
+    'format' = 'json'
 );
 
 INSERT INTO large_orders SELECT * FROM orders WHERE quantity > 10;

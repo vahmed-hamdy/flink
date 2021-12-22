@@ -20,12 +20,15 @@ package org.apache.flink.streaming.connectors.kinesis.table;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.serialization.SerializationSchema;
-import org.apache.flink.streaming.connectors.kinesis.FlinkKinesisProducer;
+import org.apache.flink.connector.aws.config.AWSConfigConstants;
+import org.apache.flink.connector.kinesis.sink.KinesisDataStreamsSink;
+import org.apache.flink.connector.kinesis.sink.KinesisDataStreamsSinkBuilder;
+import org.apache.flink.connector.kinesis.sink.KinesisDataStreamsSinkElementConverter;
 import org.apache.flink.streaming.connectors.kinesis.KinesisPartitioner;
 import org.apache.flink.table.connector.ChangelogMode;
 import org.apache.flink.table.connector.format.EncodingFormat;
 import org.apache.flink.table.connector.sink.DynamicTableSink;
-import org.apache.flink.table.connector.sink.SinkFunctionProvider;
+import org.apache.flink.table.connector.sink.SinkProvider;
 import org.apache.flink.table.connector.sink.abilities.SupportsPartitioning;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.DataType;
@@ -84,12 +87,23 @@ public class KinesisDynamicSink implements DynamicTableSink, SupportsPartitionin
         SerializationSchema<RowData> serializationSchema =
                 encodingFormat.createRuntimeEncoder(context, consumedDataType);
 
-        FlinkKinesisProducer<RowData> kinesisProducer =
-                new FlinkKinesisProducer<>(serializationSchema, producerProperties);
-        kinesisProducer.setDefaultStream(stream);
-        kinesisProducer.setCustomPartitioner(partitioner);
-
-        return SinkFunctionProvider.of(kinesisProducer);
+        //        FlinkKinesisProducer<RowData> kinesisProducer =
+        //                new FlinkKinesisProducer<>(serializationSchema, producerProperties);
+        //        kinesisProducer.setDefaultStream(stream);
+        //        kinesisProducer.setCustomPartitioner(partitioner);
+        producerProperties.put(AWSConfigConstants.TRUST_ALL_CERTIFICATES, "true");
+        producerProperties.put(AWSConfigConstants.HTTP_PROTOCOL_VERSION, "HTTP1_1");
+        KinesisDataStreamsSinkElementConverter<RowData> elementConverter =
+                KinesisDataStreamsSinkElementConverter.<RowData>builder()
+                        .setPartitionKeyGenerator(partitioner::getPartitionId)
+                        .setSerializationSchema(serializationSchema)
+                        .build();
+        KinesisDataStreamsSinkBuilder<RowData> builder = KinesisDataStreamsSink.builder();
+        builder.setStreamName(stream)
+                .setElementConverter(elementConverter)
+                .setKinesisClientProperties(producerProperties)
+                .setFailOnError(true);
+        return SinkProvider.of(builder.build());
     }
 
     @Override

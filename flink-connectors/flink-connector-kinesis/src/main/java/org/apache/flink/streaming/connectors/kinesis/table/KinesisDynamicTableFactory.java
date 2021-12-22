@@ -157,7 +157,7 @@ public class KinesisDynamicTableFactory
 
     private static void validateProducerProperties(Properties properties) {
         // this assumes no side-effects as it is also called later from FlinkKinesisProducer#open()
-        KinesisConfigUtil.getValidatedProducerConfiguration(properties);
+        // KinesisConfigUtil.getValidatedProducerConfiguration(properties);
     }
 
     public static void validateKinesisPartitioner(

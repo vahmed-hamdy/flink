@@ -50,8 +50,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * seconds of Kinesalite.
  */
 public class KinesaliteContainer extends GenericContainer<KinesaliteContainer> {
-    private static final String ACCESS_KEY = "access key";
-    private static final String SECRET_KEY = "secret key";
+    private static final String ACCESS_KEY = "access_key";
+    private static final String SECRET_KEY = "secret_key";
     private static final int PORT = 4567;
     private static final Region REGION = Region.US_EAST_1;
     private static final String URL_FORMAT = "https://%s:%s";
