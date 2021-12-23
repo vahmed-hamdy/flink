@@ -89,10 +89,6 @@ public class KinesisTableApiITCase extends TestLogger {
                     // .setEnvironmentVariable("AWS_ACCESS_KEY_ID", KINESALITE.getAccessKey())
                     // .setEnvironmentVariable("AWS_SECRET_ACCESS_KEY", KINESALITE.getSecretKey())
                     .setEnvironmentVariable("AWS_CBOR_DISABLE", "1")
-                    .setEnvironmentVariable(SdkSystemSetting.CBOR_ENABLED.property(), "false")
-                    .setEnvironmentVariable("com.amazonaws.sdk.disableCbor", "true")
-                    .setEnvironmentVariable(
-                            "org.apache.flink.kinesis.shaded.com.amazonaws.sdk.disableCbor", "true")
                     .setEnvironmentVariable(
                             "FLINK_ENV_JAVA_OPTS",
                             "-Dorg.apache.flink.kinesis.shaded.com.amazonaws.sdk.disableCertChecking")
@@ -120,8 +116,6 @@ public class KinesisTableApiITCase extends TestLogger {
         kinesisClient.createTopic(LARGE_ORDERS_STREAM, 1, properties);
 
         System.setProperty(SdkSystemSetting.CBOR_ENABLED.property(), "false");
-        System.setProperty("com.amazonaws.sdk.disableCbor", "true");
-        System.setProperty("org.apache.flink.kinesis.shaded.com.amazonaws.sdk.disableCbor", "true");
     }
 
     @After
@@ -139,18 +133,6 @@ public class KinesisTableApiITCase extends TestLogger {
 
         smallOrders.forEach(order -> kinesisClient.sendMessage(ORDERS_STREAM, toJson(order)));
         expected.forEach(order -> kinesisClient.sendMessage(ORDERS_STREAM, toJson(order)));
-
-        System.out.println("--------------------------------------------------------------------");
-        System.out.println("--------------------------------------------------------------------");
-        System.out.println("--------------------------------------------------------------------");
-        System.out.println("--------------------------------------------------------------------");
-        System.out.println("--------------------------------------------------------------------");
-        System.out.println(System.getProperty(SdkSystemSetting.CBOR_ENABLED.property()));
-        System.out.println("--------------------------------------------------------------------");
-        System.out.println("--------------------------------------------------------------------");
-        System.out.println("--------------------------------------------------------------------");
-        System.out.println("--------------------------------------------------------------------");
-        System.out.println("--------------------------------------------------------------------");
 
         executeSqlStatements(readSqlFile("filter-large-orders.sql"));
 
