@@ -20,6 +20,10 @@ package org.apache.flink.streaming.connectors.kinesis.table;
 
 import org.apache.flink.api.connector.sink.Sink;
 import org.apache.flink.connector.kinesis.sink.KinesisDataStreamsSink;
+import org.apache.flink.connectors.kinesis.table.KinesisConnectorOptions;
+import org.apache.flink.connectors.kinesis.table.KinesisDynamicSink;
+import org.apache.flink.connectors.kinesis.table.RandomKinesisKeyGenerator;
+import org.apache.flink.connectors.kinesis.table.RowDataFieldsKinesisKeyGenerator;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.streaming.connectors.kinesis.FlinkKinesisConsumer;
 import org.apache.flink.table.api.DataTypes;

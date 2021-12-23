@@ -25,8 +25,9 @@ import org.apache.flink.connector.base.table.options.ConfigurationValidator;
 import org.apache.flink.connector.base.table.options.TableOptionsUtils;
 import org.apache.flink.connector.base.table.sink.options.AsyncSinkConfigurationValidator;
 import org.apache.flink.connector.kinesis.sink.KinesisDataStreamsSinkElementConverter;
-import org.apache.flink.streaming.connectors.kinesis.table.utils.AWSOptionsUtils;
-import org.apache.flink.streaming.connectors.kinesis.table.utils.KinesisClientOptionsUtils;
+import org.apache.flink.connectors.kinesis.table.KinesisPartitionKeyGeneratorFactory;
+import org.apache.flink.connectors.kinesis.table.utils.AWSOptionsUtils;
+import org.apache.flink.connectors.kinesis.table.utils.KinesisClientOptionsUtils;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.RowType;
 
@@ -43,15 +44,15 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 
-import static org.apache.flink.streaming.connectors.kinesis.table.KinesisConnectorOptions.FLUSH_BUFFER_SIZE;
-import static org.apache.flink.streaming.connectors.kinesis.table.KinesisConnectorOptions.FLUSH_BUFFER_TIMEOUT;
-import static org.apache.flink.streaming.connectors.kinesis.table.KinesisConnectorOptions.MAX_BATCH_SIZE;
-import static org.apache.flink.streaming.connectors.kinesis.table.KinesisConnectorOptions.MAX_BUFFERED_REQUESTS;
-import static org.apache.flink.streaming.connectors.kinesis.table.KinesisConnectorOptions.MAX_IN_FLIGHT_REQUESTS;
-import static org.apache.flink.streaming.connectors.kinesis.table.KinesisConnectorOptions.SINK_FAIL_ON_ERROR;
-import static org.apache.flink.streaming.connectors.kinesis.table.KinesisConnectorOptions.SINK_PARTITIONER;
-import static org.apache.flink.streaming.connectors.kinesis.table.KinesisConnectorOptions.SINK_PARTITIONER_FIELD_DELIMITER;
-import static org.apache.flink.streaming.connectors.kinesis.table.KinesisConnectorOptions.STREAM;
+import static org.apache.flink.connectors.kinesis.table.KinesisConnectorOptions.FLUSH_BUFFER_SIZE;
+import static org.apache.flink.connectors.kinesis.table.KinesisConnectorOptions.FLUSH_BUFFER_TIMEOUT;
+import static org.apache.flink.connectors.kinesis.table.KinesisConnectorOptions.MAX_BATCH_SIZE;
+import static org.apache.flink.connectors.kinesis.table.KinesisConnectorOptions.MAX_BUFFERED_REQUESTS;
+import static org.apache.flink.connectors.kinesis.table.KinesisConnectorOptions.MAX_IN_FLIGHT_REQUESTS;
+import static org.apache.flink.connectors.kinesis.table.KinesisConnectorOptions.SINK_FAIL_ON_ERROR;
+import static org.apache.flink.connectors.kinesis.table.KinesisConnectorOptions.SINK_PARTITIONER;
+import static org.apache.flink.connectors.kinesis.table.KinesisConnectorOptions.SINK_PARTITIONER_FIELD_DELIMITER;
+import static org.apache.flink.connectors.kinesis.table.KinesisConnectorOptions.STREAM;
 import static org.apache.flink.table.factories.FactoryUtil.FORMAT;
 
 /**

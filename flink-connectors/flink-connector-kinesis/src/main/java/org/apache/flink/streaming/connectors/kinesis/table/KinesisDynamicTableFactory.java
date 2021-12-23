@@ -25,6 +25,7 @@ import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.connector.base.table.AsyncDynamicTableSinkFactory;
 import org.apache.flink.connector.kinesis.sink.KinesisDataStreamsSinkElementConverter.PartitionKeyGenerator;
+import org.apache.flink.connectors.kinesis.table.KinesisDynamicSink;
 import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.table.catalog.CatalogTable;
 import org.apache.flink.table.catalog.ResolvedCatalogTable;
@@ -51,10 +52,10 @@ import static org.apache.flink.connector.base.table.AsyncSinkConnectorOptions.FL
 import static org.apache.flink.connector.base.table.AsyncSinkConnectorOptions.MAX_BATCH_SIZE;
 import static org.apache.flink.connector.base.table.AsyncSinkConnectorOptions.MAX_BUFFERED_REQUESTS;
 import static org.apache.flink.connector.base.table.AsyncSinkConnectorOptions.MAX_IN_FLIGHT_REQUESTS;
-import static org.apache.flink.streaming.connectors.kinesis.table.KinesisConnectorOptions.SINK_FAIL_ON_ERROR;
-import static org.apache.flink.streaming.connectors.kinesis.table.KinesisConnectorOptions.SINK_PARTITIONER;
-import static org.apache.flink.streaming.connectors.kinesis.table.KinesisConnectorOptions.SINK_PARTITIONER_FIELD_DELIMITER;
-import static org.apache.flink.streaming.connectors.kinesis.table.KinesisConnectorOptions.STREAM;
+import static org.apache.flink.connectors.kinesis.table.KinesisConnectorOptions.SINK_FAIL_ON_ERROR;
+import static org.apache.flink.connectors.kinesis.table.KinesisConnectorOptions.SINK_PARTITIONER;
+import static org.apache.flink.connectors.kinesis.table.KinesisConnectorOptions.SINK_PARTITIONER_FIELD_DELIMITER;
+import static org.apache.flink.connectors.kinesis.table.KinesisConnectorOptions.STREAM;
 import static org.apache.flink.streaming.connectors.kinesis.table.KinesisConnectorOptionsUtils.KINESIS_CLIENT_PROPERTIES_KEY;
 import static org.apache.flink.table.factories.FactoryUtil.FORMAT;
 
