@@ -21,9 +21,7 @@ package org.apache.flink.streaming.connectors.kinesis.table.utils;
 import org.apache.flink.connector.aws.config.AWSConfigConstants;
 
 import org.assertj.core.api.Assertions;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,8 +29,6 @@ import java.util.Properties;
 
 /** Unit tests for {@link AWSOptionsUtils}. */
 public class AWSOptionsUtilTest {
-
-    @Rule public ExpectedException thrown = ExpectedException.none();
 
     @Test
     public void testAWSKeyMapper() {
