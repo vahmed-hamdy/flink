@@ -176,7 +176,8 @@ class KinesisDataStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRe
 
     private boolean isRetryable(Throwable err) {
         if (err instanceof CompletionException
-                && err.getCause() instanceof ResourceNotFoundException) {
+                && ((err.getCause() instanceof ResourceNotFoundException)
+                        || isInterruptingSignalException(err.getCause()))) {
             getFatalExceptionCons()
                     .accept(
                             new KinesisDataStreamsException(
@@ -192,5 +193,12 @@ class KinesisDataStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRe
         }
 
         return true;
+    }
+
+    private boolean isInterruptingSignalException(Throwable err) {
+        return err != null
+                && (err instanceof InterruptedException
+                        || (err instanceof IllegalStateException
+                                && err.getCause() instanceof InterruptedException));
     }
 }
