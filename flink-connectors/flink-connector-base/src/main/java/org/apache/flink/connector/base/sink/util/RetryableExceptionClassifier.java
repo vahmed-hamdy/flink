@@ -64,8 +64,8 @@ public class RetryableExceptionClassifier {
             RetryableExceptionClassifier... classifiers) {
         Set<RetryableExceptionClassifier> importedClassifiers = new HashSet<>();
 
-        RetryableExceptionClassifier taleClassifier = classifiers[0];
-        importedClassifiers.add(taleClassifier);
+        RetryableExceptionClassifier tailClassifier = classifiers[0];
+        importedClassifiers.add(tailClassifier);
 
         for (int i = 1; i < classifiers.length; ++i) {
             if (importedClassifiers.contains(classifiers[i])) {
@@ -73,9 +73,9 @@ public class RetryableExceptionClassifier {
                         "Wrong classifier chain; Circular chain of classifiers detected.");
             }
 
-            taleClassifier.chainedClassifier = classifiers[i];
-            taleClassifier = classifiers[i];
-            importedClassifiers.add(taleClassifier);
+            tailClassifier.chainedClassifier = classifiers[i];
+            tailClassifier = classifiers[i];
+            importedClassifiers.add(tailClassifier);
         }
 
         return classifiers[0];

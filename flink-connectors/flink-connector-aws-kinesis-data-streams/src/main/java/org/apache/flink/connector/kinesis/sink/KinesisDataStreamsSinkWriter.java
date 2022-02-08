@@ -164,9 +164,10 @@ class KinesisDataStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRe
         this.kinesisClient = buildClient(kinesisClientProperties, this.httpClient);
     }
 
-    private KinesisAsyncClient buildClient(Properties kinesisClientProperties, SdkAsyncHttpClient httpClient) {
-        AWSGeneralUtil.validateAwsConfiguration(kinesisClientProperties);
-        AWSGeneralUtil.validateWebIdentityTokenFileCredentialsProvider(kinesisClientProperties);
+    private KinesisAsyncClient buildClient(
+            Properties kinesisClientProperties, SdkAsyncHttpClient httpClient) {
+        AWSGeneralUtil.validateAwsCredentials(kinesisClientProperties);
+
         return AWSAsyncSinkUtil.createAwsAsyncClient(
                 kinesisClientProperties,
                 httpClient,
