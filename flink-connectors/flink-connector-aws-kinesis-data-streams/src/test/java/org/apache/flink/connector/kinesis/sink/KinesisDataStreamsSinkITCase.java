@@ -211,7 +211,7 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
         properties.setProperty(AWS_REGION, "some-bad-region");
         String streamName = "do-not-create-new-stream";
         assertRunWithPropertiesAndStreamShouldFailWithExceptionOfType(
-                streamName, failOnError, properties, "Invalid AWS region set in config");
+                streamName, failOnError, properties, "Invalid AWS region");
     }
 
     @Test
@@ -271,7 +271,7 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
                 streamName,
                 failOnError,
                 properties,
-                "Encountered non-recoverable exception relating to mis-configured client");
+                "UnknownHostException when attempting to interact with a service.");
     }
 
     @Test
@@ -279,7 +279,7 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
         noCredentialsProvidedAndCredentialsProviderSpecifiedShouldResultInFailure(
                 true,
                 AWSConfigConstants.CredentialProvider.ENV_VAR.toString(),
-                "Encountered non-recoverable exception relating to mis-configured client");
+                "Access key must be specified either via environment variable");
     }
 
     @Test
@@ -287,7 +287,7 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
         noCredentialsProvidedAndCredentialsProviderSpecifiedShouldResultInFailure(
                 false,
                 AWSConfigConstants.CredentialProvider.ENV_VAR.toString(),
-                "Encountered non-recoverable exception relating to mis-configured client");
+                "Access key must be specified either via environment variable");
     }
 
     @Test
@@ -295,7 +295,7 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
         noCredentialsProvidedAndCredentialsProviderSpecifiedShouldResultInFailure(
                 true,
                 AWSConfigConstants.CredentialProvider.SYS_PROP.toString(),
-                "Encountered non-recoverable exception relating to mis-configured client");
+                "Unable to load credentials from system settings");
     }
 
     @Test
@@ -303,7 +303,7 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
         noCredentialsProvidedAndCredentialsProviderSpecifiedShouldResultInFailure(
                 false,
                 AWSConfigConstants.CredentialProvider.SYS_PROP.toString(),
-                "Encountered non-recoverable exception relating to mis-configured client");
+                "Unable to load credentials from system settings");
     }
 
     @Test
@@ -311,12 +311,7 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
         noCredentialsProvidedAndCredentialsProviderSpecifiedShouldResultInFailure(
                 true,
                 AWSConfigConstants.CredentialProvider.BASIC.toString(),
-                "Please set values for AWS Access Key ID ('"
-                        + AWSConfigConstants.AWS_ACCESS_KEY_ID
-                        + "') "
-                        + "and Secret Key ('"
-                        + AWSConfigConstants.AWS_SECRET_ACCESS_KEY
-                        + "') when using the BASIC AWS credential provider type.");
+                "Please set values for AWS Access Key ID ('aws.credentials.provider.basic.accesskeyid') and Secret Key ('aws.credentials.provider.basic.secretkey') when using the BASIC AWS credential provider type.");
     }
 
     @Test
@@ -324,12 +319,7 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
         noCredentialsProvidedAndCredentialsProviderSpecifiedShouldResultInFailure(
                 false,
                 AWSConfigConstants.CredentialProvider.BASIC.toString(),
-                "Please set values for AWS Access Key ID ('"
-                        + AWSConfigConstants.AWS_ACCESS_KEY_ID
-                        + "') "
-                        + "and Secret Key ('"
-                        + AWSConfigConstants.AWS_SECRET_ACCESS_KEY
-                        + "') when using the BASIC AWS credential provider type.");
+                "Please set values for AWS Access Key ID ('aws.credentials.provider.basic.accesskeyid') and Secret Key ('aws.credentials.provider.basic.secretkey') when using the BASIC AWS credential provider type.");
     }
 
     @Test
@@ -337,7 +327,7 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
         noCredentialsProvidedAndCredentialsProviderSpecifiedShouldResultInFailure(
                 true,
                 AWSConfigConstants.CredentialProvider.WEB_IDENTITY_TOKEN.toString(),
-                "Failed to create client using WEB_IDENTITY_TOKEN provider");
+                "Either the environment variable AWS_WEB_IDENTITY_TOKEN_FILE or the javaproperty aws.webIdentityTokenFile must be set");
     }
 
     @Test
@@ -345,7 +335,7 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
         noCredentialsProvidedAndCredentialsProviderSpecifiedShouldResultInFailure(
                 false,
                 AWSConfigConstants.CredentialProvider.WEB_IDENTITY_TOKEN.toString(),
-                "Failed to create client using WEB_IDENTITY_TOKEN provider");
+                "Either the environment variable AWS_WEB_IDENTITY_TOKEN_FILE or the javaproperty aws.webIdentityTokenFile must be set");
     }
 
     @Test

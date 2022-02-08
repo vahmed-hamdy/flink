@@ -24,7 +24,7 @@ import org.apache.flink.connector.base.sink.util.RetryableExceptionClassifier;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.sts.model.StsException;
 
-/** Class containing set of {@link RetryableExceptionClassifier} for AWS credenetial failures. */
+/** Class containing set of {@link RetryableExceptionClassifier} for AWS credential failures. */
 @Internal
 public class AWSCredentialRetryableExceptionClassifiers {
     public static RetryableExceptionClassifier getInvalidCredentialsExceptionClassifier() {
@@ -38,10 +38,6 @@ public class AWSCredentialRetryableExceptionClassifiers {
 
     public static RetryableExceptionClassifier getSdkClientMisconfiguredExceptionClassifier() {
         return RetryableExceptionClassifier.withRootCauseOfType(
-                SdkClientException.class,
-                err ->
-                        new AWSAuthenticationException(
-                                "Encountered non-recoverable exception relating to mis-configured client",
-                                err));
+                SdkClientException.class, err -> (Exception) err);
     }
 }
