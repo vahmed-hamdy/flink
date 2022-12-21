@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Class holding state of {@link AsyncSinkWriter} needed at taking a snapshot. The state captures
@@ -39,10 +40,19 @@ public class BufferedRequestState<RequestEntryT extends Serializable> implements
     private final List<RequestEntryWrapper<RequestEntryT>> bufferedRequestEntries;
     private final long stateSize;
 
-    public BufferedRequestState(Deque<RequestEntryWrapper<RequestEntryT>> bufferedRequestEntries) {
-        this.bufferedRequestEntries = new ArrayList<>(bufferedRequestEntries);
+    public BufferedRequestState(Deque<RequestEntryT> bufferedRequestEntries) {
+        this.bufferedRequestEntries =
+                bufferedRequestEntries.stream()
+                        .map(req -> new RequestEntryWrapper<>(req, 0L))
+                        .collect(Collectors.toList());
         this.stateSize = calculateStateSize();
     }
+
+    //    public BufferedRequestState(Deque<RequestEntryWrapper<RequestEntryT>>
+    // bufferedRequestEntries) {
+    //        this.bufferedRequestEntries = new ArrayList<>(bufferedRequestEntries);
+    //        this.stateSize = calculateStateSize();
+    //    }
 
     public BufferedRequestState(List<RequestEntryWrapper<RequestEntryT>> bufferedRequestEntries) {
         this.bufferedRequestEntries = new ArrayList<>(bufferedRequestEntries);
