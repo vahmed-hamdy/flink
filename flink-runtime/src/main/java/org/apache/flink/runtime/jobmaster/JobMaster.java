@@ -28,6 +28,7 @@ import org.apache.flink.queryablestate.KvStateID;
 import org.apache.flink.runtime.accumulators.AccumulatorSnapshot;
 import org.apache.flink.runtime.blob.BlobWriter;
 import org.apache.flink.runtime.checkpoint.CheckpointMetrics;
+import org.apache.flink.runtime.checkpoint.CheckpointScheduling;
 import org.apache.flink.runtime.checkpoint.TaskStateSnapshot;
 import org.apache.flink.runtime.clusterframework.types.AllocationID;
 import org.apache.flink.runtime.clusterframework.types.ResourceID;
@@ -178,6 +179,8 @@ public class JobMaster extends PermanentlyFencedRpcEndpoint<JobMasterId>
 
     private final JobManagerJobMetricGroup jobManagerJobMetricGroup;
 
+    private final CheckpointScheduling checkpointScheduling;
+
     // -------- Misc ---------
 
     private final Map<String, Object> accumulators;
@@ -320,6 +323,7 @@ public class JobMaster extends PermanentlyFencedRpcEndpoint<JobMasterId>
                         jobManagerJobMetricGroup,
                         jobStatusListener);
 
+        this.checkpointScheduling = (CheckpointScheduling) schedulerNG;
         this.heartbeatServices = checkNotNull(heartbeatServices);
         this.taskManagerHeartbeatManager = NoOpHeartbeatManager.getInstance();
         this.resourceManagerHeartbeatManager = NoOpHeartbeatManager.getInstance();
@@ -803,6 +807,16 @@ public class JobMaster extends PermanentlyFencedRpcEndpoint<JobMasterId>
             @Nullable final String targetDirectory, final boolean terminate, final Time timeout) {
 
         return schedulerNG.stopWithSavepoint(targetDirectory, terminate);
+    }
+
+    @Override
+    public void suspendCheckpointing() {
+        checkpointScheduling.stopCheckpointScheduler();
+    }
+
+    @Override
+    public void resumeCheckpointing() {
+        checkpointScheduling.startCheckpointScheduler();
     }
 
     @Override

@@ -486,6 +486,42 @@ public abstract class Dispatcher extends PermanentlyFencedRpcEndpoint<Dispatcher
     }
 
     @Override
+    public CompletableFuture<Acknowledge> suspendCheckpointing(JobID jobId, final Time timeout) {
+        log.info("suspending checkpoint for job {}.", jobId);
+        return getJobMasterGateway(jobId)
+                .thenApply(
+                        jobMasterGateway -> {
+                            jobMasterGateway.suspendCheckpointing();
+                            return Acknowledge.get();
+                        })
+                .exceptionally(
+                        e -> {
+                            throw new CompletionException(
+                                    new FlinkException(
+                                            "Cancellation failed.",
+                                            ExceptionUtils.stripCompletionException(e)));
+                        });
+    }
+
+    @Override
+    public CompletableFuture<Acknowledge> resumeCheckpointing(JobID jobId, final Time timeout) {
+        log.info("resuming checkpoint for job {}.", jobId);
+        return getJobMasterGateway(jobId)
+                .thenApply(
+                        jobMasterGateway -> {
+                            jobMasterGateway.resumeCheckpointing();
+                            return Acknowledge.get();
+                        })
+                .exceptionally(
+                        e -> {
+                            throw new CompletionException(
+                                    new FlinkException(
+                                            "Cancellation failed.",
+                                            ExceptionUtils.stripCompletionException(e)));
+                        });
+    }
+
+    @Override
     public CompletableFuture<Acknowledge> disposeSavepoint(String savepointPath, Time timeout) {
         final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 

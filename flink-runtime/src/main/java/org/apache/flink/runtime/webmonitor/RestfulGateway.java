@@ -164,6 +164,28 @@ public interface RestfulGateway extends RpcGateway {
     }
 
     /**
+     * Suspends checkpointing
+     *
+     * @param jobId ID of the job for which checkpointing is suspended
+     * @return A future acknowledge if suspend succeeded
+     */
+    default CompletableFuture<Acknowledge> suspendCheckpointing(
+            JobID jobId, @RpcTimeout final Time timeout) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Resumes checkpointing
+     *
+     * @param jobId ID of the job for which the checkpointing is resumed
+     * @return A future acknowledge if resume succeeded
+     */
+    default CompletableFuture<Acknowledge> resumeCheckpointing(
+            JobID jobId, @RpcTimeout final Time timeout) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
      * Dispose the given savepoint.
      *
      * @param savepointPath identifying the savepoint to dispose

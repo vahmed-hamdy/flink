@@ -245,6 +245,19 @@ public interface JobMasterGateway
             @Nullable final String targetDirectory,
             final boolean terminate,
             @RpcTimeout final Time timeout);
+    /**
+     * Suspends checkpointing on the job.
+     *
+     * @return Future acknowledge of the operation
+     */
+    void suspendCheckpointing();
+
+    /**
+     * Resumes checkpointing on the job.
+     *
+     * @return Future acknowledge of the operation
+     */
+    void resumeCheckpointing();
 
     /**
      * Notifies that the allocation has failed.
