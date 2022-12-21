@@ -23,6 +23,7 @@ import org.apache.flink.api.common.JobStatus;
 import org.apache.flink.queryablestate.KvStateID;
 import org.apache.flink.runtime.accumulators.AccumulatorSnapshot;
 import org.apache.flink.runtime.checkpoint.CheckpointMetrics;
+import org.apache.flink.runtime.checkpoint.CheckpointScheduling;
 import org.apache.flink.runtime.checkpoint.TaskStateSnapshot;
 import org.apache.flink.runtime.concurrent.FutureUtils;
 import org.apache.flink.runtime.execution.ExecutionState;
@@ -52,7 +53,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /** Testing implementation of the {@link SchedulerNG}. */
-public class TestingSchedulerNG implements SchedulerNG {
+public class TestingSchedulerNG implements SchedulerNG, CheckpointScheduling {
     private final CompletableFuture<JobStatus> jobTerminationFuture;
     private final Runnable startSchedulingRunnable;
     private final Supplier<CompletableFuture<Void>> closeAsyncSupplier;
@@ -222,6 +223,16 @@ public class TestingSchedulerNG implements SchedulerNG {
 
     public static Builder newBuilder() {
         return new Builder();
+    }
+
+    @Override
+    public void startCheckpointScheduler() {
+        // TODO: implement tests
+    }
+
+    @Override
+    public void stopCheckpointScheduler() {
+        // TODO: implement tests
     }
 
     /** Builder for the TestingSchedulerNG. */
