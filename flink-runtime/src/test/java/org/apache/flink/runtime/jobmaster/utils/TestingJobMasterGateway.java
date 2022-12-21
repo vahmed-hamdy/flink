@@ -410,6 +410,12 @@ public class TestingJobMasterGateway implements JobMasterGateway {
     }
 
     @Override
+    public void suspendCheckpointing() {}
+
+    @Override
+    public void resumeCheckpointing() {}
+
+    @Override
     public void notifyAllocationFailure(AllocationID allocationID, Exception cause) {
         notifyAllocationFailureConsumer.accept(allocationID, cause);
     }
