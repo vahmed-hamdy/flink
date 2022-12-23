@@ -18,51 +18,59 @@
 
 package org.apache.flink.connector.base.sink.writer.buffertrigger;
 
-import org.apache.flink.api.common.operators.ProcessingTimeService;
-
 import java.io.Serializable;
+import java.util.List;
 
 public class AhmedAsyncSinkBuffer<RequestEntryT extends Serializable>
         extends AsyncSinkBuffer<RequestEntryT> {
-
-    protected int bufferSizeInBytes;
-    private final int maxBatchSizeInBytes;
-
     public AhmedAsyncSinkBuffer(
-            AsyncSinkBufferFlushTrigger bufferFlushTrigger,
-            ProcessingTimeService timeService,
-            long maxTimeInBufferMS,
-            int maxBufferSize,
-            int maxBatchSizeInBytes) {
-        super(bufferFlushTrigger, timeService, maxTimeInBufferMS, maxBufferSize);
-        this.maxBatchSizeInBytes = maxBatchSizeInBytes;
+            List<AsyncSinkBufferBlockingStrategy<RequestEntryT>> bufferMonitors,
+            List<AsyncSinkBufferFlushTrigger<RequestEntryT>> asyncSinkBufferFlushTriggers,
+            AsyncSinkBufferFlushAction bufferFlushAction) {
+        super(bufferMonitors, asyncSinkBufferFlushTriggers, bufferFlushAction);
     }
 
-    @Override
-    public boolean add(RequestEntryT entry) {
-        bufferSizeInBytes += getRecordSizeInBytes(entry);
-        return super.add(entry);
-    }
-
-    @Override
-    public void addFirst(RequestEntryT entry) {
-        bufferSizeInBytes += getRecordSizeInBytes(entry);
-        super.addFirst(entry);
-    }
-
-    public int countOfEntries() {
-        return bufferedRequestEntries.size();
-    }
-
-    public RequestEntryT remove() {
-        return bufferedRequestEntries.remove();
-    }
-
-    public boolean hasAvailableBatch(int batchSize) {
-        return super.hasAvailableBatch(batchSize) || bufferSizeInBytes >= maxBatchSizeInBytes;
-    }
-
-    protected int getRecordSizeInBytes(RequestEntryT requestEntry) {
-        return requestEntry.toString().length();
-    }
+    //    public AhmedAsyncSinkBuffer(
+    //            AsyncSinkBufferFlushTrigger bufferFlushTrigger,
+    //            ProcessingTimeService timeService,
+    //            long maxTimeInBufferMS,
+    //            int maxBufferSize,
+    //            int maxBatchSizeInBytes) {
+    //        super(
+    //                bufferFlushTrigger,
+    //                bufferMonitors,
+    //                bufferFlushTriggers,
+    //                timeService,
+    //                maxTimeInBufferMS,
+    //                maxBufferSize);
+    //        this.maxBatchSizeInBytes = maxBatchSizeInBytes;
+    //    }
+    //
+    //    @Override
+    //    public boolean add(RequestEntryT entry) {
+    //        bufferSizeInBytes += getRecordSizeInBytes(entry);
+    //        return super.add(entry);
+    //    }
+    //
+    //    @Override
+    //    public void addFirst(RequestEntryT entry) {
+    //        bufferSizeInBytes += getRecordSizeInBytes(entry);
+    //        super.addFirst(entry);
+    //    }
+    //
+    //    public int countOfEntries() {
+    //        return bufferedRequestEntries.size();
+    //    }
+    //
+    //    public RequestEntryT remove() {
+    //        return bufferedRequestEntries.remove();
+    //    }
+    //
+    //    public boolean hasAvailableBatch(int batchSize) {
+    //        return super.hasAvailableBatch(batchSize) || bufferSizeInBytes >= maxBatchSizeInBytes;
+    //    }
+    //
+    //    protected int getRecordSizeInBytes(RequestEntryT requestEntry) {
+    //        return requestEntry.toString().length();
+    //    }
 }

@@ -18,32 +18,22 @@
 
 package org.apache.flink.connector.base.sink.writer.buffertrigger;
 
-import org.apache.flink.annotation.Internal;
+import org.apache.flink.connector.base.sink.writer.BufferedRequestState;
 
-import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
+import java.io.Serializable;
 
-/** Dummy doc. */
-@Internal
-public abstract class AsyncSinkBufferMonitor<RequestEntryT> {
-    private final AsyncSinkBufferFlushTrigger flushTrigger;
-    private final List<RequestEntryT> buffer;
+public final class BufferSizeBlockingStrategy<RequestEntryT extends Serializable>
+        implements AsyncSinkBufferBlockingStrategy<RequestEntryT> {
 
-    protected AsyncSinkBufferMonitor(
-            AsyncSinkBufferFlushTrigger flushTrigger, List<RequestEntryT> buffer) {
-        this.flushTrigger = flushTrigger;
-        this.buffer = buffer;
+    private final int maxBufferedRequests;
+
+    public BufferSizeBlockingStrategy(int maxBufferedRequests) {
+        this.maxBufferedRequests = maxBufferedRequests;
     }
 
-    public AsyncSinkBufferFlushTrigger getFlushTrigger() {
-        return flushTrigger;
+    @Override
+    public boolean shouldBlock(
+            BufferedRequestState<RequestEntryT> bufferState, RequestEntryT newRequestEntry) {
+        return bufferState.getBufferedRequestEntries().size() >= maxBufferedRequests;
     }
-
-    public List<RequestEntryT> getBuffer() {
-        return Collections.unmodifiableList(buffer);
-    }
-
-    public abstract void notifyBufferChange(Long triggerId, RequestEntryT addedEntry)
-            throws IOException, InterruptedException;
 }

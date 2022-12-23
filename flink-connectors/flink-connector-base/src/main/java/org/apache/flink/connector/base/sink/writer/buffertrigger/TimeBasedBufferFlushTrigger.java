@@ -21,44 +21,63 @@ package org.apache.flink.connector.base.sink.writer.buffertrigger;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.operators.ProcessingTimeService;
 
-import java.io.IOException;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 @Internal
-public final class TimeBasedBufferMonitor<RequestEntryT>
-        extends AsyncSinkBufferMonitor<RequestEntryT> {
+public final class TimeBasedBufferFlushTrigger<RequestEntryT>
+        implements AsyncSinkBufferFlushTrigger<RequestEntryT> {
+
+    private final List<AsyncSinkBufferFlushAction> flushTriggers = new ArrayList<>();
 
     private final ProcessingTimeService timeService;
     private final long maxTimeInBufferMS;
 
     private boolean existsActiveTimerCallback = false;
 
-    private TimeBasedBufferMonitor(
-            ProcessingTimeService timeService,
-            Long maxTimeInBufferMS,
-            AsyncSinkBufferFlushTrigger flushTrigger,
-            List<RequestEntryT> buffer) {
-        super(flushTrigger, buffer);
+    public TimeBasedBufferFlushTrigger(ProcessingTimeService timeService, Long maxTimeInBufferMS) {
         this.maxTimeInBufferMS = maxTimeInBufferMS;
         this.timeService = timeService;
     }
 
-    //    @Override
-    public void notifyBufferChange(Long triggerId) {
-        if (existsActiveTimerCallback || this.getBuffer().size() != 1) {
-            return;
-        }
+    @Override
+    public void registerFlushAction(AsyncSinkBufferFlushAction flushAction) {
+        this.flushTriggers.add(flushAction);
+    }
 
+    @Override
+    public void notifyAddRequest(RequestEntryT requestAdded, long triggerId)
+            throws InterruptedException {
+        registerCallback();
+    }
+
+    @Override
+    public void notifyRemoveRequest(RequestEntryT requestRemoved, long triggerId)
+            throws InterruptedException {
+        // do nothing
+    }
+
+    @Override
+    public boolean willTriggerOnAdd(RequestEntryT requestAdded) {
+        return !existsActiveTimerCallback;
+    }
+
+    private void registerCallback() {
+        long triggerId = Instant.now().toEpochMilli();
         ProcessingTimeService.ProcessingTimeCallback ptc =
                 instant -> {
                     existsActiveTimerCallback = false;
-                    getFlushTrigger().triggerFlush(triggerId);
+                    this.flushTriggers.forEach(
+                            trigger -> {
+                                try {
+                                    trigger.triggerFlush(triggerId);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            });
                 };
         timeService.registerTimer(timeService.getCurrentProcessingTime() + maxTimeInBufferMS, ptc);
         existsActiveTimerCallback = true;
     }
-
-    @Override
-    public void notifyBufferChange(Long triggerId, RequestEntryT addedEntry)
-            throws IOException, InterruptedException {}
 }

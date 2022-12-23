@@ -21,30 +21,28 @@ package org.apache.flink.connector.base.sink.writer.buffertrigger;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class BufferSizeInBytesFlushTrigger<RequestEntryT>
+public class BatchSizeFlushTrigger<RequestEntryT>
         implements AsyncSinkBufferFlushTrigger<RequestEntryT> {
 
     private final List<AsyncSinkBufferFlushAction> flushTriggers = new ArrayList<>();
-    private final long maxBatchSizeInBytes;
-    private long bufferSizeInBytes;
+    private final int maxBatchSize;
+    private int currentBatchSize;
 
-    protected BufferSizeInBytesFlushTrigger(long maxBatchSizeInBytes) {
-        this.maxBatchSizeInBytes = maxBatchSizeInBytes;
-        this.bufferSizeInBytes = 0L;
+    public BatchSizeFlushTrigger(int maxBatchSize) {
+        this.maxBatchSize = maxBatchSize;
+        this.currentBatchSize = 0;
     }
-
-    protected abstract int getSizeOfEntry(RequestEntryT addedEntry);
 
     @Override
     public void registerFlushAction(AsyncSinkBufferFlushAction flushAction) {
-        this.flushTriggers.add(flushAction);
+        flushTriggers.add(flushAction);
     }
 
     @Override
     public void notifyAddRequest(RequestEntryT requestAdded, long triggerId)
             throws InterruptedException {
-        bufferSizeInBytes += getSizeOfEntry(requestAdded);
-        if (bufferSizeInBytes >= maxBatchSizeInBytes) {
+        currentBatchSize++;
+        if (currentBatchSize >= maxBatchSize) {
             for (AsyncSinkBufferFlushAction triggerAction : this.flushTriggers) {
                 triggerAction.triggerFlush(triggerId);
             }
@@ -54,11 +52,11 @@ public abstract class BufferSizeInBytesFlushTrigger<RequestEntryT>
     @Override
     public void notifyRemoveRequest(RequestEntryT requestRemoved, long triggerId)
             throws InterruptedException {
-        bufferSizeInBytes -= getSizeOfEntry(requestRemoved);
+        currentBatchSize--;
     }
 
     @Override
     public boolean willTriggerOnAdd(RequestEntryT requestAdded) {
-        return (bufferSizeInBytes + getSizeOfEntry(requestAdded) >= maxBatchSizeInBytes);
+        return (currentBatchSize + 1 >= maxBatchSize);
     }
 }

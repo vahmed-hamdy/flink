@@ -23,7 +23,11 @@ import org.apache.flink.api.common.operators.ProcessingTimeService;
 import org.apache.flink.api.connector.sink2.Sink;
 import org.apache.flink.api.connector.sink2.StatefulSink;
 import org.apache.flink.connector.base.sink.writer.buffertrigger.AsyncSinkBuffer;
-import org.apache.flink.connector.base.sink.writer.buffertrigger.AsyncSinkBufferMonitor;
+import org.apache.flink.connector.base.sink.writer.buffertrigger.AsyncSinkBufferBlockingStrategy;
+import org.apache.flink.connector.base.sink.writer.buffertrigger.BatchSizeFlushTrigger;
+import org.apache.flink.connector.base.sink.writer.buffertrigger.BufferSizeBlockingStrategy;
+import org.apache.flink.connector.base.sink.writer.buffertrigger.BufferSizeInBytesFlushTrigger;
+import org.apache.flink.connector.base.sink.writer.buffertrigger.TimeBasedBufferFlushTrigger;
 import org.apache.flink.connector.base.sink.writer.config.AsyncSinkWriterConfiguration;
 import org.apache.flink.connector.base.sink.writer.strategy.BasicRequestInfo;
 import org.apache.flink.connector.base.sink.writer.strategy.BasicResultInfo;
@@ -35,6 +39,8 @@ import org.apache.flink.util.Preconditions;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -62,6 +68,8 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
 
     /* The timestamp of the previous batch of records was sent from this sink. */
     private long lastSendTimestamp = 0;
+
+    private long lastTriggerTimestamp = 0;
 
     /* The timestamp of the response to the previous request from this sink. */
     private long ackTime = Long.MAX_VALUE;
@@ -125,7 +133,7 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      */
     private double bufferedRequestEntriesTotalSizeInBytes;
 
-    private final List<AsyncSinkBufferMonitor<RequestEntryT>> monitors;
+    private final List<AsyncSinkBufferBlockingStrategy<RequestEntryT>> monitors;
 
     private final AsyncSinkBuffer<RequestEntryT> bufferedRequestEntries;
 
@@ -308,9 +316,27 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
                                 "A fatal exception occurred in the sink that cannot be recovered from or should not be retried.");
 
         this.bufferedRequestEntries =
-                new AsyncSinkBuffer<>(
-                        triggerId -> flush(), timeService, maxTimeInBufferMS, maxBufferedRequests);
-        initializeState(states);
+                new AsyncSinkBuffer<RequestEntryT>(
+                        Arrays.asList(
+                                new BufferSizeBlockingStrategy<RequestEntryT>(maxBufferedRequests)),
+                        Arrays.asList(
+                                new BufferSizeInBytesFlushTrigger<RequestEntryT>(
+                                        maxBatchSizeInBytes) {
+
+                                    @Override
+                                    protected int getSizeOfEntry(RequestEntryT addedEntry) {
+                                        return (int) getSizeInBytes(addedEntry);
+                                    }
+                                },
+                                new BatchSizeFlushTrigger<RequestEntryT>(maxBatchSize),
+                                new TimeBasedBufferFlushTrigger<RequestEntryT>(
+                                        context.getProcessingTimeService(), maxTimeInBufferMS)),
+                        this::flush);
+        try {
+            initializeState(states);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -346,6 +372,13 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
     private BasicRequestInfo createRequestInfo() {
         int batchSize = getNextBatchSize();
         return new BasicRequestInfo(batchSize);
+    }
+
+    private void flush(long triggerId) throws InterruptedException {
+        if (triggerId <= lastSendTimestamp) {
+            return;
+        }
+        flush();
     }
 
     /**
@@ -391,7 +424,12 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      * {@code maxBatchSizeInBytes}. Also adds these to the metrics counters.
      */
     private List<RequestEntryT> createNextAvailableBatch(RequestInfo requestInfo) {
-        List<RequestEntryT> batch = bufferedRequestEntries.removeBatch(requestInfo.getBatchSize());
+        List<RequestEntryT> batch = new ArrayList<>();
+        try {
+            batch = bufferedRequestEntries.removeBatch(requestInfo.getBatchSize());
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
         numRecordsOutCounter.inc(batch.size());
         numBytesOutCounter.inc(0);
 
@@ -422,7 +460,8 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
         nonBlockingFlush();
     }
 
-    private void addEntryToBuffer(RequestEntryT entry, boolean insertAtHead) {
+    private void addEntryToBuffer(RequestEntryT entry, boolean insertAtHead)
+            throws InterruptedException {
         //        addEntryToBuffer(new RequestEntryWrapper<>(entry, getSizeInBytes(entry)),
         // insertAtHead);
         //    }
@@ -438,11 +477,7 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
         //                            entry.getSize(), maxRecordSizeInBytes));
         //        }
 
-        if (insertAtHead) {
-            bufferedRequestEntries.addFirst(entry);
-        } else {
-            bufferedRequestEntries.add(entry);
-        }
+        bufferedRequestEntries.add(entry, insertAtHead);
 
         //        bufferedRequestEntriesTotalSizeInBytes += entry.getSize();
     }
@@ -483,7 +518,8 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
         return Collections.singletonList(bufferedRequestEntries.getBufferState());
     }
 
-    private void initializeState(Collection<BufferedRequestState<RequestEntryT>> states) {
+    private void initializeState(Collection<BufferedRequestState<RequestEntryT>> states)
+            throws InterruptedException {
         for (BufferedRequestState<RequestEntryT> state : states) {
             for (RequestEntryWrapper<RequestEntryT> wrapper : state.getBufferedRequestEntries()) {
                 addEntryToBuffer(wrapper.getRequestEntry(), false);

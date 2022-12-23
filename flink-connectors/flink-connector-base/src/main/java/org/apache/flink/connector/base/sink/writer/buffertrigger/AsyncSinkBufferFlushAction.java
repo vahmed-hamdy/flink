@@ -20,15 +20,9 @@ package org.apache.flink.connector.base.sink.writer.buffertrigger;
 
 import org.apache.flink.annotation.Internal;
 
-/** Action. */
+/** Dummy doc. */
 @Internal
-public interface AsyncSinkBufferFlushTrigger<RequestEntryT> {
-    void registerFlushAction(AsyncSinkBufferFlushAction flushAction);
-
-    void notifyAddRequest(RequestEntryT requestAdded, long triggerId) throws InterruptedException;
-
-    void notifyRemoveRequest(RequestEntryT requestRemoved, long triggerId)
-            throws InterruptedException;
-
-    boolean willTriggerOnAdd(RequestEntryT requestAdded);
+@FunctionalInterface
+public interface AsyncSinkBufferFlushAction {
+    void triggerFlush(long triggerId) throws InterruptedException;
 }

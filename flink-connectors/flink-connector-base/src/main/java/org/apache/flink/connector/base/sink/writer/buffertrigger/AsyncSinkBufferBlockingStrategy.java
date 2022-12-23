@@ -18,29 +18,14 @@
 
 package org.apache.flink.connector.base.sink.writer.buffertrigger;
 
-import java.io.IOException;
-import java.util.List;
+import org.apache.flink.annotation.Internal;
+import org.apache.flink.connector.base.sink.writer.BufferedRequestState;
 
-public final class BufferSizeMonitor<RequestEntryT> extends AsyncSinkBufferMonitor<RequestEntryT> {
+import java.io.Serializable;
 
-    private final int maxBufferedRequests;
-
-    private BufferSizeMonitor(
-            AsyncSinkBufferFlushTrigger flushTrigger,
-            List<RequestEntryT> buffer,
-            int maxBufferedRequests) {
-        super(flushTrigger, buffer);
-        this.maxBufferedRequests = maxBufferedRequests;
-    }
-
-    //    @Override
-    public void notifyBufferChange(Long triggerId) throws IOException, InterruptedException {
-        if (getBuffer().size() > maxBufferedRequests) {
-            getFlushTrigger().triggerFlush(triggerId);
-        }
-    }
-
-    @Override
-    public void notifyBufferChange(Long triggerId, RequestEntryT addedEntry)
-            throws IOException, InterruptedException {}
+/** Dummy doc. */
+@Internal
+public interface AsyncSinkBufferBlockingStrategy<RequestEntryT extends Serializable> {
+    public boolean shouldBlock(
+            BufferedRequestState<RequestEntryT> bufferState, RequestEntryT newRequestEntry);
 }
