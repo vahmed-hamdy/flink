@@ -83,6 +83,12 @@ public class TestingRestfulGateway implements RestfulGateway {
             DEFAULT_TRIGGER_SAVEPOINT_FUNCTION =
                     (JobID jobId, String targetDirectory) ->
                             FutureUtils.completedExceptionally(new UnsupportedOperationException());
+
+    static final Function<JobID, CompletableFuture<Acknowledge>>
+            DEFAULT_TRIGGER_SUSPEND_CHECKPOINT =
+                    (jobId) -> CompletableFuture.completedFuture(Acknowledge.get());
+    static final Function<JobID, CompletableFuture<Acknowledge>> DEFAULT_TRIGGER_RESUME_CHECKPOINT =
+            (jobId) -> CompletableFuture.completedFuture(Acknowledge.get());
     static final BiFunction<JobID, String, CompletableFuture<String>>
             DEFAULT_STOP_WITH_SAVEPOINT_FUNCTION =
                     (JobID jobId, String targetDirectory) ->
@@ -130,6 +136,10 @@ public class TestingRestfulGateway implements RestfulGateway {
 
     protected BiFunction<JobID, String, CompletableFuture<String>> triggerSavepointFunction;
 
+    protected Function<JobID, CompletableFuture<Acknowledge>> triggerSuspendCheckpointing;
+
+    protected Function<JobID, CompletableFuture<Acknowledge>> triggerResumeCheckpointing;
+
     protected BiFunction<JobID, String, CompletableFuture<String>> stopWithSavepointFunction;
 
     protected TriFunction<
@@ -153,6 +163,8 @@ public class TestingRestfulGateway implements RestfulGateway {
                 DEFAULT_REQUEST_METRIC_QUERY_SERVICE_PATHS_SUPPLIER,
                 DEFAULT_REQUEST_TASK_MANAGER_METRIC_QUERY_SERVICE_PATHS_SUPPLIER,
                 DEFAULT_TRIGGER_SAVEPOINT_FUNCTION,
+                DEFAULT_TRIGGER_SUSPEND_CHECKPOINT,
+                DEFAULT_TRIGGER_RESUME_CHECKPOINT,
                 DEFAULT_STOP_WITH_SAVEPOINT_FUNCTION,
                 DEFAULT_CLUSTER_SHUTDOWN_SUPPLIER,
                 DEFAULT_DELIVER_COORDINATION_REQUEST_TO_COORDINATOR_FUNCTION);
@@ -174,6 +186,8 @@ public class TestingRestfulGateway implements RestfulGateway {
             Supplier<CompletableFuture<Collection<Tuple2<ResourceID, String>>>>
                     requestTaskManagerMetricQueryServiceAddressesSupplier,
             BiFunction<JobID, String, CompletableFuture<String>> triggerSavepointFunction,
+            Function<JobID, CompletableFuture<Acknowledge>> triggerSuspendCheckpointing,
+            Function<JobID, CompletableFuture<Acknowledge>> triggerResumeCheckpointing,
             BiFunction<JobID, String, CompletableFuture<String>> stopWithSavepointFunction,
             Supplier<CompletableFuture<Acknowledge>> clusterShutdownSupplier,
             TriFunction<
@@ -200,6 +214,8 @@ public class TestingRestfulGateway implements RestfulGateway {
         this.clusterShutdownSupplier = clusterShutdownSupplier;
         this.deliverCoordinationRequestToCoordinatorFunction =
                 deliverCoordinationRequestToCoordinatorFunction;
+        this.triggerSuspendCheckpointing = triggerSuspendCheckpointing;
+        this.triggerResumeCheckpointing = triggerResumeCheckpointing;
     }
 
     @Override
@@ -261,6 +277,16 @@ public class TestingRestfulGateway implements RestfulGateway {
     }
 
     @Override
+    public CompletableFuture<Acknowledge> suspendCheckpointing(JobID jobId, Time timeout) {
+        return triggerSuspendCheckpointing.apply(jobId);
+    }
+
+    @Override
+    public CompletableFuture<Acknowledge> resumeCheckpointing(JobID jobId, Time timeout) {
+        return triggerResumeCheckpointing.apply(jobId);
+    }
+
+    @Override
     public CompletableFuture<String> stopWithSavepoint(
             JobID jobId, String targetDirectory, boolean terminate, Time timeout) {
         return stopWithSavepointFunction.apply(jobId, targetDirectory);
@@ -311,6 +337,8 @@ public class TestingRestfulGateway implements RestfulGateway {
         protected Supplier<CompletableFuture<Acknowledge>> clusterShutdownSupplier;
         protected BiFunction<JobID, String, CompletableFuture<String>> triggerSavepointFunction;
         protected BiFunction<JobID, String, CompletableFuture<String>> stopWithSavepointFunction;
+        protected Function<JobID, CompletableFuture<Acknowledge>> triggerSuspendCheckpointing;
+        protected Function<JobID, CompletableFuture<Acknowledge>> triggerResumeCheckpointing;
         protected TriFunction<
                         JobID,
                         OperatorID,
@@ -331,6 +359,7 @@ public class TestingRestfulGateway implements RestfulGateway {
             requestTaskManagerMetricQueryServiceGatewaysSupplier =
                     DEFAULT_REQUEST_TASK_MANAGER_METRIC_QUERY_SERVICE_PATHS_SUPPLIER;
             triggerSavepointFunction = DEFAULT_TRIGGER_SAVEPOINT_FUNCTION;
+            triggerSuspendCheckpointing = DEFAULT_TRIGGER_SUSPEND_CHECKPOINT;
             stopWithSavepointFunction = DEFAULT_STOP_WITH_SAVEPOINT_FUNCTION;
             clusterShutdownSupplier = DEFAULT_CLUSTER_SHUTDOWN_SUPPLIER;
             deliverCoordinationRequestToCoordinatorFunction =
@@ -419,6 +448,18 @@ public class TestingRestfulGateway implements RestfulGateway {
             return self();
         }
 
+        public T setTriggerSuspendCheckpointing(
+                Function<JobID, CompletableFuture<Acknowledge>> triggerSuspendCheckpointing) {
+            this.triggerSuspendCheckpointing = triggerSuspendCheckpointing;
+            return self();
+        }
+
+        public T setTriggerResumeCheckpointing(
+                Function<JobID, CompletableFuture<Acknowledge>> triggerSuspendCheckpointing) {
+            this.triggerResumeCheckpointing = triggerSuspendCheckpointing;
+            return self();
+        }
+
         public T setStopWithSavepointFunction(
                 BiFunction<JobID, String, CompletableFuture<String>> stopWithSavepointFunction) {
             this.stopWithSavepointFunction = stopWithSavepointFunction;
@@ -465,6 +506,8 @@ public class TestingRestfulGateway implements RestfulGateway {
                     requestMetricQueryServiceGatewaysSupplier,
                     requestTaskManagerMetricQueryServiceGatewaysSupplier,
                     triggerSavepointFunction,
+                    triggerSuspendCheckpointing,
+                    triggerResumeCheckpointing,
                     stopWithSavepointFunction,
                     clusterShutdownSupplier,
                     deliverCoordinationRequestToCoordinatorFunction);
