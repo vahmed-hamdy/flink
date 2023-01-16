@@ -314,23 +314,30 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
                                     throw exception;
                                 },
                                 "A fatal exception occurred in the sink that cannot be recovered from or should not be retried.");
-
+        BufferSizeInBytesFlushTrigger<RequestEntryT> bufferedRequestStateSizeInBytesFlushTrigger =
+                new BufferSizeInBytesFlushTrigger<RequestEntryT>(maxBatchSizeInBytes) {
+                    @Override
+                    protected int getSizeOfEntry(RequestEntryT addedEntry) {
+                        return (int) getSizeInBytes(addedEntry);
+                    }
+                };
+        bufferedRequestStateSizeInBytesFlushTrigger.registerFlushAction(
+                (triggerId -> nonBlockingFlush()));
+        BatchSizeFlushTrigger<RequestEntryT> batchSizeFlushTrigger =
+                new BatchSizeFlushTrigger<>(maxBatchSize);
+        batchSizeFlushTrigger.registerFlushAction((triggerId -> nonBlockingFlush()));
+        TimeBasedBufferFlushTrigger<RequestEntryT> timeBasedBufferFlushTrigger =
+                new TimeBasedBufferFlushTrigger<>(
+                        context.getProcessingTimeService(), maxTimeInBufferMS);
+        timeBasedBufferFlushTrigger.registerFlushAction(this::flush);
         this.bufferedRequestEntries =
-                new AsyncSinkBuffer<RequestEntryT>(
+                new AsyncSinkBuffer<>(
+                        Collections.singletonList(
+                                new BufferSizeBlockingStrategy<>(maxBufferedRequests)),
                         Arrays.asList(
-                                new BufferSizeBlockingStrategy<RequestEntryT>(maxBufferedRequests)),
-                        Arrays.asList(
-                                new BufferSizeInBytesFlushTrigger<RequestEntryT>(
-                                        maxBatchSizeInBytes) {
-
-                                    @Override
-                                    protected int getSizeOfEntry(RequestEntryT addedEntry) {
-                                        return (int) getSizeInBytes(addedEntry);
-                                    }
-                                },
-                                new BatchSizeFlushTrigger<RequestEntryT>(maxBatchSize),
-                                new TimeBasedBufferFlushTrigger<RequestEntryT>(
-                                        context.getProcessingTimeService(), maxTimeInBufferMS)),
+                                bufferedRequestStateSizeInBytesFlushTrigger,
+                                batchSizeFlushTrigger,
+                                timeBasedBufferFlushTrigger),
                         this::flush);
         try {
             initializeState(states);
@@ -347,8 +354,6 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
         }
 
         addEntryToBuffer(requestEntry, false);
-
-        nonBlockingFlush();
     }
 
     /**
@@ -363,8 +368,7 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      * </ul>
      */
     private void nonBlockingFlush() throws InterruptedException {
-        while (!rateLimitingStrategy.shouldBlock(createRequestInfo())
-                && bufferedRequestEntries.hasAvailableBatch(getNextBatchSizeLimit())) {
+        while (!rateLimitingStrategy.shouldBlock(createRequestInfo())) {
             flush();
         }
     }
@@ -462,24 +466,7 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
 
     private void addEntryToBuffer(RequestEntryT entry, boolean insertAtHead)
             throws InterruptedException {
-        //        addEntryToBuffer(new RequestEntryWrapper<>(entry, getSizeInBytes(entry)),
-        // insertAtHead);
-        //    }
-        //
-        //    private void addEntryToBuffer(RequestEntryWrapper<RequestEntryT> entry, boolean
-        // insertAtHead) {
-
-        //        if (entry.getSize() > maxRecordSizeInBytes) {
-        //            throw new IllegalArgumentException(
-        //                    String.format(
-        //                            "The request entry sent to the buffer was of size [%s], when
-        // the maxRecordSizeInBytes was set to [%s].",
-        //                            entry.getSize(), maxRecordSizeInBytes));
-        //        }
-
         bufferedRequestEntries.add(entry, insertAtHead);
-
-        //        bufferedRequestEntriesTotalSizeInBytes += entry.getSize();
     }
 
     /**

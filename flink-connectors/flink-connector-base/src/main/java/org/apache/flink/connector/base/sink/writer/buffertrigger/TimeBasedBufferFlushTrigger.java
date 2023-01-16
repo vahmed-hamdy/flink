@@ -64,6 +64,9 @@ public final class TimeBasedBufferFlushTrigger<RequestEntryT>
     }
 
     private void registerCallback() {
+        if (existsActiveTimerCallback) {
+            return;
+        }
         long triggerId = Instant.now().toEpochMilli();
         ProcessingTimeService.ProcessingTimeCallback ptc =
                 instant -> {

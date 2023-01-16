@@ -49,8 +49,9 @@ public class AsyncSinkBuffer<RequestEntryT extends Serializable> {
             AsyncSinkBufferFlushAction bufferFlushAction) {
         this.bufferMonitors = bufferMonitors;
         this.bufferFlushTriggers = bufferFlushTriggers;
-        this.bufferFlushTriggers.forEach(action -> action.registerFlushAction(bufferFlushAction));
-        //        this.timeService = timeService;
+        //        this.bufferFlushTriggers.forEach(action ->
+        // action.registerFlushAction(bufferFlushAction));
+        //                this.timeService = timeService;
         //        this.maxTimeInBufferMS = maxTimeInBufferMS;
         //        this.maxBufferSize = maxBufferSize;
     }
@@ -74,8 +75,7 @@ public class AsyncSinkBuffer<RequestEntryT extends Serializable> {
 
     public boolean canAddRequestEntry(RequestEntryT requestEntry) throws IllegalArgumentException {
         return this.bufferMonitors.stream()
-                .map(monitor -> monitor.shouldBlock(getBufferState(), requestEntry))
-                .reduce(false, (a, b) -> a | b);
+                .noneMatch(monitor -> monitor.shouldBlock(getBufferState(), requestEntry));
     }
 
     public List<RequestEntryT> removeBatch(int batchSize) throws IOException, InterruptedException {
