@@ -21,6 +21,8 @@ import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.connector.base.sink.AsyncSinkBaseBuilder;
 
+import org.apache.flink.connector.base.sink.writer.AsyncSinkWriter;
+
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
 
 import java.util.Optional;
@@ -69,6 +71,12 @@ public class KinesisStreamsSinkBuilder<InputT>
     private static final long DEFAULT_MAX_RECORD_SIZE_IN_B = 1 * 1024 * 1024;
     private static final boolean DEFAULT_FAIL_ON_ERROR = false;
 
+    private static final double DEFAULT_DECREASE_FACTOR = AsyncSinkWriter.INFLIGHT_MESSAGES_LIMIT_DECREASE_FACTOR;
+    private static final int DEFAULT_INCREASE_RATE = AsyncSinkWriter.INFLIGHT_MESSAGES_LIMIT_INCREASE_RATE;
+
+    private Double decreaseFactor;
+    private Integer increaseRate;
+
     private Boolean failOnError;
     private String streamName;
     private Properties kinesisClientProperties;
@@ -113,6 +121,18 @@ public class KinesisStreamsSinkBuilder<InputT>
         return this;
     }
 
+    public KinesisStreamsSinkBuilder<InputT> setIncreaseRate(
+            Integer increaseRate) {
+        this.increaseRate = increaseRate;
+        return this;
+    }
+
+    public KinesisStreamsSinkBuilder<InputT> setDecreaseFactor(
+            Double decreaseFactor) {
+        this.decreaseFactor = decreaseFactor;
+        return this;
+    }
+
     @Override
     public KinesisStreamsSink<InputT> build() {
         return new KinesisStreamsSink<>(
@@ -129,6 +149,8 @@ public class KinesisStreamsSinkBuilder<InputT>
                 Optional.ofNullable(getMaxRecordSizeInBytes()).orElse(DEFAULT_MAX_RECORD_SIZE_IN_B),
                 Optional.ofNullable(failOnError).orElse(DEFAULT_FAIL_ON_ERROR),
                 streamName,
-                Optional.ofNullable(kinesisClientProperties).orElse(new Properties()));
+                Optional.ofNullable(kinesisClientProperties).orElse(new Properties()),
+                Optional.ofNullable(increaseRate).orElse(DEFAULT_INCREASE_RATE),
+                Optional.ofNullable(decreaseFactor).orElse(DEFAULT_DECREASE_FACTOR));
     }
 }

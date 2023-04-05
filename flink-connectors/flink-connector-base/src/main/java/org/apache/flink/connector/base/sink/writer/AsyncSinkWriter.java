@@ -26,6 +26,9 @@ import org.apache.flink.metrics.Counter;
 import org.apache.flink.metrics.groups.SinkWriterMetricGroup;
 import org.apache.flink.util.Preconditions;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayDeque;
@@ -53,8 +56,10 @@ import java.util.function.Consumer;
 public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable>
         implements StatefulSink.StatefulSinkWriter<InputT, BufferedRequestState<RequestEntryT>> {
 
-    private static final int INFLIGHT_MESSAGES_LIMIT_INCREASE_RATE = 10;
-    private static final double INFLIGHT_MESSAGES_LIMIT_DECREASE_FACTOR = 0.5;
+    private static final Logger LOGGER = LoggerFactory.getLogger(AsyncSinkWriter.class);
+
+    public static final int INFLIGHT_MESSAGES_LIMIT_INCREASE_RATE = 10;
+    public static final double INFLIGHT_MESSAGES_LIMIT_DECREASE_FACTOR = 0.99;
 
     private final MailboxExecutor mailboxExecutor;
     private final ProcessingTimeService timeService;
@@ -256,6 +261,32 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
             long maxTimeInBufferMS,
             long maxRecordSizeInBytes,
             Collection<BufferedRequestState<RequestEntryT>> states) {
+        this(elementConverter,
+                context,
+                maxBatchSize,
+                maxInFlightRequests,
+                maxBufferedRequests,
+                maxBatchSizeInBytes,
+                maxTimeInBufferMS,
+                maxRecordSizeInBytes,
+                states,
+                INFLIGHT_MESSAGES_LIMIT_INCREASE_RATE,
+                INFLIGHT_MESSAGES_LIMIT_DECREASE_FACTOR);
+    }
+
+
+    public AsyncSinkWriter(
+            ElementConverter<InputT, RequestEntryT> elementConverter,
+            Sink.InitContext context,
+            int maxBatchSize,
+            int maxInFlightRequests,
+            int maxBufferedRequests,
+            long maxBatchSizeInBytes,
+            long maxTimeInBufferMS,
+            long maxRecordSizeInBytes,
+            Collection<BufferedRequestState<RequestEntryT>> states,
+            int increaseRate,
+            double decreaseFactor) {
         this.elementConverter = elementConverter;
         this.mailboxExecutor = context.getMailboxExecutor();
         this.timeService = context.getProcessingTimeService();
@@ -288,8 +319,8 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
         this.inFlightMessages = 0;
         this.rateLimitingStrategy =
                 new AIMDRateLimitingStrategy(
-                        INFLIGHT_MESSAGES_LIMIT_INCREASE_RATE,
-                        INFLIGHT_MESSAGES_LIMIT_DECREASE_FACTOR,
+                        increaseRate,
+                        decreaseFactor,
                         maxBatchSize * maxInFlightRequests,
                         maxBatchSize);
 
@@ -358,8 +389,7 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      * messages exceeds the maximum determined to be appropriate by the rate limiting strategy.
      */
     private boolean isInFlightRequestOrMessageLimitExceeded() {
-        return inFlightRequestsCount >= maxInFlightRequests
-                || inFlightMessages >= rateLimitingStrategy.getRateLimit();
+        return inFlightRequestsCount >= maxInFlightRequests;
     }
 
     /**
@@ -379,6 +409,7 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
         if (batch.size() == 0) {
             return;
         }
+
 
         long timestampOfRequest = System.currentTimeMillis();
         Consumer<List<RequestEntryT>> requestResult =
@@ -450,8 +481,10 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
 
     private void updateInFlightMessagesLimit(boolean isSuccessfulRequest) {
         if (isSuccessfulRequest) {
+            LOGGER.info("SCALING UPP");
             rateLimitingStrategy.scaleUp();
         } else {
+            LOGGER.info("SCALING DOWN");
             rateLimitingStrategy.scaleDown();
         }
     }
@@ -540,7 +573,7 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
     public void close() {}
 
     private int getNextBatchSizeLimit() {
-        return Math.min(maxBatchSize, rateLimitingStrategy.getRateLimit());
+        return maxBatchSize;
     }
 
     protected Consumer<Exception> getFatalExceptionCons() {

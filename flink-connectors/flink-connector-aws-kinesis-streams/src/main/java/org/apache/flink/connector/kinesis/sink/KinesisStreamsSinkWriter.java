@@ -137,6 +137,37 @@ class KinesisStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRecord
             String streamName,
             Properties kinesisClientProperties,
             Collection<BufferedRequestState<PutRecordsRequestEntry>> states) {
+        this(elementConverter,
+                context,
+                maxBatchSize,
+                maxInFlightRequests,
+                maxBufferedRequests,
+                maxBatchSizeInBytes,
+                maxTimeInBufferMS,
+                maxRecordSizeInBytes,
+                failOnError,
+                streamName,
+                kinesisClientProperties,
+                states,
+                INFLIGHT_MESSAGES_LIMIT_INCREASE_RATE,
+                INFLIGHT_MESSAGES_LIMIT_DECREASE_FACTOR);
+    }
+
+    KinesisStreamsSinkWriter(
+            ElementConverter<InputT, PutRecordsRequestEntry> elementConverter,
+            Sink.InitContext context,
+            int maxBatchSize,
+            int maxInFlightRequests,
+            int maxBufferedRequests,
+            long maxBatchSizeInBytes,
+            long maxTimeInBufferMS,
+            long maxRecordSizeInBytes,
+            boolean failOnError,
+            String streamName,
+            Properties kinesisClientProperties,
+            Collection<BufferedRequestState<PutRecordsRequestEntry>> states,
+            int increaseRate,
+            double decreaseFactor) {
         super(
                 elementConverter,
                 context,
@@ -146,7 +177,9 @@ class KinesisStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRecord
                 maxBatchSizeInBytes,
                 maxTimeInBufferMS,
                 maxRecordSizeInBytes,
-                states);
+                states,
+                increaseRate,
+                decreaseFactor);
         this.failOnError = failOnError;
         this.streamName = streamName;
         this.metrics = context.metricGroup();
@@ -154,7 +187,9 @@ class KinesisStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRecord
         this.numRecordsSendErrorsCounter = metrics.getNumRecordsSendErrorsCounter();
         this.httpClient = AWSGeneralUtil.createAsyncHttpClient(kinesisClientProperties);
         this.kinesisClient = buildClient(kinesisClientProperties, this.httpClient);
+
     }
+
 
     private KinesisAsyncClient buildClient(
             Properties kinesisClientProperties, SdkAsyncHttpClient httpClient) {

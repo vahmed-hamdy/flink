@@ -20,6 +20,7 @@ package org.apache.flink.connector.kinesis.sink;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.base.sink.AsyncSinkBase;
+import org.apache.flink.connector.base.sink.writer.AsyncSinkWriter;
 import org.apache.flink.connector.base.sink.writer.BufferedRequestState;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
@@ -69,6 +70,8 @@ public class KinesisStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRecords
     private final boolean failOnError;
     private final String streamName;
     private final Properties kinesisClientProperties;
+    private final double decreaseFactor;
+    private final int increaseRate;
 
     KinesisStreamsSink(
             ElementConverter<InputT, PutRecordsRequestEntry> elementConverter,
@@ -81,6 +84,33 @@ public class KinesisStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRecords
             boolean failOnError,
             String streamName,
             Properties kinesisClientProperties) {
+    this(elementConverter,
+            maxBatchSize,
+            maxInFlightRequests,
+            maxBufferedRequests,
+            maxBatchSizeInBytes,
+            maxTimeInBufferMS,
+            maxRecordSizeInBytes,
+            failOnError,
+            streamName,
+            kinesisClientProperties,
+            AsyncSinkWriter.INFLIGHT_MESSAGES_LIMIT_INCREASE_RATE,
+            AsyncSinkWriter.INFLIGHT_MESSAGES_LIMIT_DECREASE_FACTOR);
+    }
+
+    KinesisStreamsSink(
+            ElementConverter<InputT, PutRecordsRequestEntry> elementConverter,
+            Integer maxBatchSize,
+            Integer maxInFlightRequests,
+            Integer maxBufferedRequests,
+            Long maxBatchSizeInBytes,
+            Long maxTimeInBufferMS,
+            Long maxRecordSizeInBytes,
+            boolean failOnError,
+            String streamName,
+            Properties kinesisClientProperties,
+            int increaseRate,
+            double decreaseFactor) {
         super(
                 elementConverter,
                 maxBatchSize,
@@ -98,6 +128,8 @@ public class KinesisStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRecords
                 "The stream name must be set when initializing the KDS Sink.");
         this.failOnError = failOnError;
         this.kinesisClientProperties = kinesisClientProperties;
+        this.increaseRate = increaseRate;
+        this.decreaseFactor = decreaseFactor;
     }
 
     /**
@@ -127,7 +159,9 @@ public class KinesisStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRecords
                 failOnError,
                 streamName,
                 kinesisClientProperties,
-                Collections.emptyList());
+                Collections.emptyList(),
+                increaseRate,
+                decreaseFactor);
     }
 
     @Internal
@@ -155,6 +189,8 @@ public class KinesisStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRecords
                 failOnError,
                 streamName,
                 kinesisClientProperties,
-                recoveredState);
+                recoveredState,
+                increaseRate,
+                decreaseFactor);
     }
 }
