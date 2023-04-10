@@ -149,6 +149,8 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      */
     private int inFlightMessages;
 
+    private long inFlightBytes;
+
     /**
      * Tracks the cumulative size of all elements in {@code bufferedRequestEntries} to facilitate
      * the criterion for flushing after {@code maxBatchSizeInBytes} is reached.
@@ -317,9 +319,12 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
         this.bufferedRequestEntriesTotalSizeInBytes = 0;
 
         this.inFlightMessages = 0;
+        this.inFlightBytes = 0L;
+        LOGGER.info("Starting Writer with increase rate " + increaseRate + "and decrease factor " + decreaseFactor);
+
         this.rateLimitingStrategy =
                 new AIMDRateLimitingStrategy(
-                        increaseRate,
+                        increaseRate * 1024,
                         decreaseFactor,
                         maxBatchSize * maxInFlightRequests,
                         maxBatchSize);
@@ -377,7 +382,7 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
     private void nonBlockingFlush() throws InterruptedException {
         while (!isInFlightRequestOrMessageLimitExceeded()
                 && (bufferedRequestEntries.size() >= getNextBatchSizeLimit()
-                        || bufferedRequestEntriesTotalSizeInBytes >= maxBatchSizeInBytes)) {
+                        || bufferedRequestEntriesTotalSizeInBytes >= getMaxBatchSizeInBytes())) {
             flush();
         }
     }
@@ -389,7 +394,8 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      * messages exceeds the maximum determined to be appropriate by the rate limiting strategy.
      */
     private boolean isInFlightRequestOrMessageLimitExceeded() {
-        return inFlightRequestsCount >= maxInFlightRequests;
+        return inFlightRequestsCount >= maxInFlightRequests
+                || inFlightBytes >= rateLimitingStrategy.getRateLimit();
     }
 
     /**
@@ -425,6 +431,8 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
 
         inFlightRequestsCount++;
         inFlightMessages += batchSize;
+        Long requestSizeInBytes = batch.stream().map(this::getSizeInBytes).reduce(Long::sum).orElse(0L);
+        inFlightBytes += requestSizeInBytes;
         submitRequestEntries(batch, requestResult);
     }
 
@@ -468,6 +476,9 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
 
         inFlightRequestsCount--;
         inFlightMessages -= batchSize;
+        Long requestSizeInBytes = failedRequestEntries.stream().map(this::getSizeInBytes).reduce(Long::sum).orElse(0L);
+        inFlightBytes -= requestSizeInBytes;
+
 
         updateInFlightMessagesLimit(failedRequestEntries.size() == 0);
 
@@ -481,10 +492,8 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
 
     private void updateInFlightMessagesLimit(boolean isSuccessfulRequest) {
         if (isSuccessfulRequest) {
-            LOGGER.info("SCALING UPP");
             rateLimitingStrategy.scaleUp();
         } else {
-            LOGGER.info("SCALING DOWN");
             rateLimitingStrategy.scaleDown();
         }
     }
@@ -573,7 +582,11 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
     public void close() {}
 
     private int getNextBatchSizeLimit() {
-        return maxBatchSize;
+        return  maxBatchSize;
+    }
+
+    private long getMaxBatchSizeInBytes() {
+        return Math.min(maxBatchSizeInBytes, rateLimitingStrategy.getRateLimit());
     }
 
     protected Consumer<Exception> getFatalExceptionCons() {

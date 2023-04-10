@@ -26,6 +26,8 @@ import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
 import org.apache.flink.util.Preconditions;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
 
 import java.io.IOException;
@@ -66,6 +68,8 @@ import java.util.Properties;
  */
 @PublicEvolving
 public class KinesisStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRecordsRequestEntry> {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(KinesisStreamsSink.class);
 
     private final boolean failOnError;
     private final String streamName;
@@ -119,6 +123,7 @@ public class KinesisStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRecords
                 maxBatchSizeInBytes,
                 maxTimeInBufferMS,
                 maxRecordSizeInBytes);
+        LOGGER.info("Starting sink with increase rate " + increaseRate + "and decrease factor " + decreaseFactor);
         this.streamName =
                 Preconditions.checkNotNull(
                         streamName,
