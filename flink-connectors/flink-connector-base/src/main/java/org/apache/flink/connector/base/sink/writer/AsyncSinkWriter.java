@@ -59,7 +59,7 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
     private static final Logger LOGGER = LoggerFactory.getLogger(AsyncSinkWriter.class);
 
     public static final int INFLIGHT_MESSAGES_LIMIT_INCREASE_RATE = 10;
-    public static final double INFLIGHT_MESSAGES_LIMIT_DECREASE_FACTOR = 0.99;
+    public static final double INFLIGHT_MESSAGES_LIMIT_DECREASE_FACTOR = 0.5D;
 
     private final MailboxExecutor mailboxExecutor;
     private final ProcessingTimeService timeService;
@@ -317,12 +317,12 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
         this.bufferedRequestEntriesTotalSizeInBytes = 0;
 
         this.inFlightMessages = 0;
-        this.rateLimitingStrategy =
-                new AIMDRateLimitingStrategy(
-                        increaseRate,
-                        decreaseFactor,
-                        maxBatchSize * maxInFlightRequests,
-                        maxBatchSize);
+        this.rateLimitingStrategy = getRateLimitingStrategyIfKinesis(this.getClass());
+//                new AIMDRateLimitingStrategy(
+//                        increaseRate,
+//                        decreaseFactor,
+//                        maxBatchSize * maxInFlightRequests,
+//                        maxBatchSize);
 
         this.metrics = context.metricGroup();
         this.metrics.setCurrentSendTimeGauge(() -> this.ackTime - this.lastSendTimestamp);
@@ -567,6 +567,13 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
         }
 
         this.bufferedRequestEntriesTotalSizeInBytes += state.getStateSize();
+    }
+
+    private static AIMDRateLimitingStrategy getRateLimitingStrategyIfKinesis(Class<? extends AsyncSinkWriter> writerClass) {
+        if(writerClass.getSimpleName().contains("KinesisStreamsSink") ) {
+            return new AIMDRateLimitingStrategy(INFLIGHT_MESSAGES_LIMIT_INCREASE_RATE, 0.89D, 1024000, 10);
+        }
+        return new AIMDRateLimitingStrategy(INFLIGHT_MESSAGES_LIMIT_INCREASE_RATE, 0.5D, 1024, 100);
     }
 
     @Override
