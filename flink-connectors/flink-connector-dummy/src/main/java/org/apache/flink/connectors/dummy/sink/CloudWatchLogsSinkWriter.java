@@ -27,6 +27,7 @@ import software.amazon.awssdk.auth.credentials.EnvironmentVariableCredentialsPro
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
 import software.amazon.awssdk.services.cloudwatchlogs.model.DescribeLogStreamsRequest;
 import software.amazon.awssdk.services.cloudwatchlogs.model.DescribeLogStreamsResponse;
+import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogEventsRequest;
 import software.amazon.awssdk.services.cloudwatchlogs.model.InputLogEvent;
 import software.amazon.awssdk.services.cloudwatchlogs.model.PutLogEventsRequest;
 
@@ -109,11 +110,9 @@ public class CloudWatchLogsSinkWriter<InputT> implements StatefulSink.StatefulSi
         try {
             logsClient.putLogEvents(putLogEventsRequest);
             logEventBatchMap.remove(streamName);
-        } catch (Exception ignored) {
-
+        } catch (Exception e) {
+            System.out.println("Don't take it that seriously bro " + e.getMessage());
         }
-
-
     }
 
     @Override
