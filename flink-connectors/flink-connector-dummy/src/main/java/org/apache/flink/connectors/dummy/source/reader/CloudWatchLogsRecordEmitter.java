@@ -1,7 +1,9 @@
-package org.apache.flink.connectors.dummy.source;
+package org.apache.flink.connectors.dummy.source.reader;
 
 import org.apache.flink.api.connector.source.SourceOutput;
 import org.apache.flink.connector.base.source.reader.RecordEmitter;
+
+import org.apache.flink.connectors.dummy.source.CloudWatchSourceSplitState;
 
 import software.amazon.awssdk.services.cloudwatchlogs.model.InputLogEvent;
 import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent;
@@ -20,7 +22,6 @@ public class CloudWatchLogsRecordEmitter<T> implements RecordEmitter<OutputLogEv
             CloudWatchSourceSplitState splitState) throws Exception {
         output.collect(this.converter.apply(element));
         // TODO replace with Token and use response
-        splitState.setNextToken(element.timestamp());
-
+        splitState.setCurrentTimeStamp(element.timestamp());
     }
 }

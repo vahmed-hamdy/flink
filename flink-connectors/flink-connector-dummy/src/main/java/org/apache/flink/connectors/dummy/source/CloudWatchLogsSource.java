@@ -8,18 +8,30 @@ import org.apache.flink.api.connector.source.SplitEnumerator;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
+import org.apache.flink.connector.base.source.reader.fetcher.SingleThreadFetcherManager;
 import org.apache.flink.connector.base.source.reader.synchronization.FutureCompletingBlockingQueue;
+import org.apache.flink.connectors.dummy.source.enumerator.CloudWatchLogsEnumState;
+import org.apache.flink.connectors.dummy.source.enumerator.CloudWatchLogsSourceEnumerator;
+import org.apache.flink.connectors.dummy.source.reader.CloudWatchLogsRecordEmitter;
+import org.apache.flink.connectors.dummy.source.reader.CloudWatchLogsSourceReader;
+import org.apache.flink.connectors.dummy.source.reader.CloudWatchLogsStreamReader;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
 
 import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent;
 
 import java.util.function.Function;
 
-public class CloudWatchLogsSource<T> implements Source<T, CloudWatchLogsSplit, CloudWatchSourceSplitState> {
+public class CloudWatchLogsSource<T> implements Source<T, CloudWatchLogsSplit, CloudWatchLogsEnumState> {
     private final Function<OutputLogEvent, T> converter;
+    private final String logGroup;
 
-    public CloudWatchLogsSource(Function<OutputLogEvent, T> converter) {
+    private final String streamPrefixes;
+
+    public CloudWatchLogsSource(Function<OutputLogEvent, T> converter, String logGroup,
+                               String streamPrefixes) {
         this.converter = converter;
+        this.logGroup = logGroup;
+        this.streamPrefixes = streamPrefixes;
     }
 
     @Override
@@ -27,33 +39,43 @@ public class CloudWatchLogsSource<T> implements Source<T, CloudWatchLogsSplit, C
         return Boundedness.CONTINUOUS_UNBOUNDED;
     }
 
+    // TODO
     @Override
-    public SplitEnumerator<CloudWatchLogsSplit, CloudWatchSourceSplitState> createEnumerator(
+    public SplitEnumerator<CloudWatchLogsSplit, CloudWatchLogsEnumState> createEnumerator(
             SplitEnumeratorContext<CloudWatchLogsSplit> enumContext) throws Exception {
-        return null;
+        return new CloudWatchLogsSourceEnumerator(logGroup, streamPrefixes, enumContext);
     }
 
+    // TODO DAY3
     @Override
-    public SplitEnumerator<CloudWatchLogsSplit, CloudWatchSourceSplitState> restoreEnumerator(
+    public SplitEnumerator<CloudWatchLogsSplit, CloudWatchLogsEnumState> restoreEnumerator(
             SplitEnumeratorContext<CloudWatchLogsSplit> enumContext,
-            CloudWatchSourceSplitState checkpoint) throws Exception {
+            CloudWatchLogsEnumState checkpoint) throws Exception {
         return null;
     }
 
+    // TODO
     @Override
     public SimpleVersionedSerializer<CloudWatchLogsSplit> getSplitSerializer() {
         return null;
     }
 
+    // TODO
     @Override
-    public SimpleVersionedSerializer<CloudWatchSourceSplitState> getEnumeratorCheckpointSerializer() {
+    public SimpleVersionedSerializer<CloudWatchLogsEnumState> getEnumeratorCheckpointSerializer() {
         return null;
     }
 
     @Override
     public SourceReader<T, CloudWatchLogsSplit> createReader(SourceReaderContext readerContext) throws Exception {
         FutureCompletingBlockingQueue<RecordsWithSplitIds<OutputLogEvent>> eq = new FutureCompletingBlockingQueue<>();
-        return new CloudWatchLogsSourceReader<>(eq, new CloudWatchLogsFetcherManager(eq,
-                CloudWatchLogsStreamReader::new ,new Configuration(),(ignore) -> {}), new CloudWatchLogsRecordEmitter<T>(converter),new Configuration(), readerContext);
+        return new CloudWatchLogsSourceReader<>(eq,
+                new SingleThreadFetcherManager<>(eq,
+                        () -> new CloudWatchLogsStreamReader(logGroup),
+                        new Configuration(),
+                        (ignore) -> {}),
+                new CloudWatchLogsRecordEmitter<>(converter),
+                new Configuration(),
+                readerContext);
     }
 }
