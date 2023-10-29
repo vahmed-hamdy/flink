@@ -15,10 +15,12 @@ import org.apache.flink.connectors.dummy.source.enumerator.CloudWatchLogsSourceE
 import org.apache.flink.connectors.dummy.source.reader.CloudWatchLogsRecordEmitter;
 import org.apache.flink.connectors.dummy.source.reader.CloudWatchLogsSourceReader;
 import org.apache.flink.connectors.dummy.source.reader.CloudWatchLogsStreamReader;
+import org.apache.flink.connectors.dummy.source.reader.fetcher.CloudWatchLogsFetcherManager;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
 
 import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent;
 
+import java.io.IOException;
 import java.util.function.Function;
 
 public class CloudWatchLogsSource<T> implements Source<T, CloudWatchLogsSplit, CloudWatchLogsEnumState> {
@@ -57,23 +59,37 @@ public class CloudWatchLogsSource<T> implements Source<T, CloudWatchLogsSplit, C
     // TODO
     @Override
     public SimpleVersionedSerializer<CloudWatchLogsSplit> getSplitSerializer() {
-        return null;
+        return new CloudWatchLogsSplitSerializer(logGroup);
     }
 
     // TODO
     @Override
     public SimpleVersionedSerializer<CloudWatchLogsEnumState> getEnumeratorCheckpointSerializer() {
-        return null;
+        return new SimpleVersionedSerializer<CloudWatchLogsEnumState>() {
+            @Override
+            public int getVersion() {
+                return 0;
+            }
+
+            @Override
+            public byte[] serialize(CloudWatchLogsEnumState obj) throws IOException {
+                return new byte[0];
+            }
+
+            @Override
+            public CloudWatchLogsEnumState deserialize(
+                    int version,
+                    byte[] serialized) throws IOException {
+                return null;
+            }
+        };
     }
 
     @Override
     public SourceReader<T, CloudWatchLogsSplit> createReader(SourceReaderContext readerContext) throws Exception {
         FutureCompletingBlockingQueue<RecordsWithSplitIds<OutputLogEvent>> eq = new FutureCompletingBlockingQueue<>();
         return new CloudWatchLogsSourceReader<>(eq,
-                new SingleThreadFetcherManager<>(eq,
-                        () -> new CloudWatchLogsStreamReader(logGroup),
-                        new Configuration(),
-                        (ignore) -> {}),
+                new CloudWatchLogsFetcherManager(eq, () -> new CloudWatchLogsStreamReader(logGroup), new Configuration()),
                 new CloudWatchLogsRecordEmitter<>(converter),
                 new Configuration(),
                 readerContext);

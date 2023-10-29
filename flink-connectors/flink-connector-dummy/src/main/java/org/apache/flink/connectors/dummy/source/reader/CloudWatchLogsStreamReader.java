@@ -17,50 +17,70 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent;
 import javax.annotation.Nullable;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class CloudWatchLogsStreamReader implements SplitReader<OutputLogEvent, CloudWatchLogsSplit> {
     private final String logGroup;
     private final CloudWatchLogsClient logsClient;
 
-    private Set<CloudWatchLogsSplit> streamsToReadFrom;
+    private final List<CloudWatchLogsSplit> streamsToReadFrom;
 
     public CloudWatchLogsStreamReader(String logGroup) {
         this.logGroup = logGroup;
         this.logsClient = CloudWatchLogsClient.builder()
                 .credentialsProvider(EnvironmentVariableCredentialsProvider.create())
                 .build();
-        this.streamsToReadFrom = new HashSet<>();
+        this.streamsToReadFrom = new ArrayList<>();
     }
 
     @Override
     public RecordsWithSplitIds<OutputLogEvent> fetch() throws IOException {
 
+        /// We are assuming a single stream per reader.
+        if(streamsToReadFrom.isEmpty()) {
+            return null;
+        }
+        CloudWatchLogsSplit split = streamsToReadFrom.get(0);
         // TODO
         GetLogEventsRequest request = GetLogEventsRequest.builder()
                 .logGroupName(logGroup)
+                .logStreamName(split.splitId())
+                .startTime(split.getStartTimeStamp())
+                .endTime(Instant.now().toEpochMilli())
+                .startFromHead(true)
+                .limit(100) // TODO: configure
                 .build();
         GetLogEventsResponse response = this.logsClient.getLogEvents(request);
+        split.setStartTimeStamp(response.events().stream().map(OutputLogEvent::timestamp).max(Long::compare).orElse(split.getStartTimeStamp()) + 1);
         Iterator<OutputLogEvent> eventIterator = response.events().iterator();
+
 
         return new RecordsWithSplitIds<OutputLogEvent>() {
             @Nullable
             @Override
             public String nextSplit() {
-                return "";
+                return eventIterator.hasNext() ? split.splitId() : null;
             }
 
             @Nullable
             @Override
             public OutputLogEvent nextRecordFromSplit() {
-                return eventIterator.next();
+                if(!eventIterator.hasNext())
+                    return null;
+                OutputLogEvent event = eventIterator.next();
+
+                return  OutputLogEvent.builder().message("{Stream: " + split.splitId()+"} + " + event.message()).timestamp(event.timestamp()).build();
             }
 
+            // Currently we do not support finished log streams
             @Override
             public Set<String> finishedSplits() {
                 return Collections.emptySet();
@@ -71,7 +91,13 @@ public class CloudWatchLogsStreamReader implements SplitReader<OutputLogEvent, C
     @Override
     public void handleSplitsChanges(SplitsChange<CloudWatchLogsSplit> splitsChanges) {
         if (splitsChanges instanceof SplitsAddition) {
+            if(splitsChanges.splits().size() != 1) {
+                throw new IllegalStateException("a7a maynfa3sh");
+            }
             streamsToReadFrom.addAll(splitsChanges.splits());
+
+        } else {
+            streamsToReadFrom.clear();
         }
     }
 

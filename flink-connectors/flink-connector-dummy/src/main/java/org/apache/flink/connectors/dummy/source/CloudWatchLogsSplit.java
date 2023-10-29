@@ -9,11 +9,11 @@ import java.util.Objects;
 
 public class CloudWatchLogsSplit implements SourceSplit {
 
-    private final String logGroup;
-    private final String logStream;
+    protected final String logGroup;
+    protected final String logStream;
 
     @Nullable
-    private Long startTimeStamp;
+    protected Long startTimeStamp;
 
     public CloudWatchLogsSplit(String logGroup, String logStream) {
         this(logGroup, logStream, null);

@@ -11,6 +11,11 @@ public class CloudWatchSourceSplitState extends CloudWatchLogsSplit{
     @Nullable
     private Long currentTimeStamp;
 
+    public CloudWatchSourceSplitState(CloudWatchLogsSplit split) {
+        super(split.logGroup, split.logStream, split.startTimeStamp);
+        this.currentTimeStamp = split.startTimeStamp;
+    }
+
 
     public CloudWatchSourceSplitState(String logGroup, String logStream, @Nullable Long startTimeStamp, @Nullable Long currentTimeStamp, @Nullable String nextToken) {
         super(logGroup, logStream, startTimeStamp);
@@ -32,19 +37,7 @@ public class CloudWatchSourceSplitState extends CloudWatchLogsSplit{
         this.currentTimeStamp = currentTimeStamp;
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), currentTimeStamp);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if(!(obj instanceof CloudWatchLogsSplit)){
-            return false;
-        }
-        CloudWatchSourceSplitState other = (CloudWatchSourceSplitState) obj;
-        return super.equals(obj)
-                && Objects.equals(this.currentTimeStamp, other.currentTimeStamp)
-                && Objects.equals(this.nextToken, other.nextToken);
+    public CloudWatchLogsSplit tpSplit() {
+        return new CloudWatchLogsSplit(this.logGroup, this.logStream, this.currentTimeStamp);
     }
 }

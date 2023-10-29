@@ -31,8 +31,8 @@ public class CloudWatchLogsSourceEnumerator implements SplitEnumerator<CloudWatc
     private final CloudWatchLogsClient logsClient;
     private final SplitEnumeratorContext<CloudWatchLogsSplit> context;
 
-    private List<String> assignedSplits;
-    private List<String> unassignedSplits;
+    private List<String> assignedSplits = new ArrayList<>();
+    private List<String> unassignedSplits = new ArrayList<>();
 
     private final CloudWatchLogsSplitAssigner splitAssigner;
 
@@ -117,9 +117,11 @@ public class CloudWatchLogsSourceEnumerator implements SplitEnumerator<CloudWatc
 
         Map<CloudWatchLogsSplit, Integer> newSplits = logStreams.stream()
                 .filter(logStream -> !assignedSplits.contains(logStream.logStreamName()) && !unassignedSplits.contains(logStream.logStreamName()))
-                .map(ls -> new CloudWatchLogsSplit(logGroup, ls.logStreamName(), ls.firstEventTimestamp()))
+                .map(ls -> new CloudWatchLogsSplit(logGroup, ls.logStreamName(), ls.firstEventTimestamp() - 60_000))
                 .collect(Collectors.toMap(split -> split, splitAssigner::assignSplit));
         Map<Integer, List<CloudWatchLogsSplit>> newAssignment = new HashMap<>();
+        if(newSplits.isEmpty())
+            return;
         for(Integer reader: context.registeredReaders().keySet()) {
             newAssignment.put(reader, new ArrayList<>());
             newAssignment.get(reader)
@@ -130,6 +132,7 @@ public class CloudWatchLogsSourceEnumerator implements SplitEnumerator<CloudWatc
                 newAssignment.remove(reader);
             }
         }
+        assignedSplits.addAll(newSplits.keySet().stream().map(CloudWatchLogsSplit::splitId).collect(Collectors.toList()));
         context.assignSplits(new SplitsAssignment<>(newAssignment));
     }
 }

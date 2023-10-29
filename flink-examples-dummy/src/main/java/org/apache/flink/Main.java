@@ -20,8 +20,7 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.enableCheckpointing(1000, CheckpointingMode.AT_LEAST_ONCE);
-
+//        env.enableCheckpointing(1000, CheckpointingMode.AT_LEAST_ONCE);
         DataStream<String> fromGen =
                 env.fromSequence(1, 10_000_000L)
                         .map(Object::toString)
@@ -32,7 +31,7 @@ public class Main {
                                                 ImmutableMap.of("data", data)));
 
         CloudWatchLogsSink<String> sink = new CloudWatchLogsSink<String>("flinkConnectorTest",
-                (s -> "connectorTestStream"),
+                (s -> "connectorTestLogStream"),
                 s -> InputLogEvent.builder().timestamp(Instant.now().toEpochMilli()).message(s).build());
         fromGen.sinkTo(sink);
 //        fromGen.sinkTo(new PrintSink<>());

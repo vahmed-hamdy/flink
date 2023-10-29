@@ -52,7 +52,7 @@ public class CloudWatchLogsSplitAssigner {
 
     private int assignSplitToTable(CloudWatchLogsSplit split, List<List<CloudWatchLogsSplit>> splitTable) {
         AtomicInteger subtask = new AtomicInteger();
-        IntegerSequence.range(0, numberOfReaders).forEach((a) -> subtask.set(splitTable.get(a).size() < splitTable.get(
+        IntegerSequence.range(0, numberOfReaders - 1).forEach((a) -> subtask.set(splitTable.get(a).size() < splitTable.get(
                 subtask.get()).size() ? a : subtask.get()));
         splitTable.get(subtask.get()).add(split);
         return subtask.get();
@@ -64,7 +64,7 @@ public class CloudWatchLogsSplitAssigner {
     }
 
     public Integer getReaderForSplit(CloudWatchLogsSplit split) {
-        return IntStream.range(0, numberOfReaders)
+        return IntStream.range(0, numberOfReaders - 1)
                 .filter(i -> splitTable.get(i).contains(split))
                 .map(i -> subtaskIndex.inverse().get(i))
                 .findFirst()

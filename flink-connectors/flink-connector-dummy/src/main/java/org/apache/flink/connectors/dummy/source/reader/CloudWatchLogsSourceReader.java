@@ -6,7 +6,9 @@ import org.apache.flink.connector.base.source.reader.RecordEmitter;
 import org.apache.flink.connector.base.source.reader.RecordEvaluator;
 import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
 import org.apache.flink.connector.base.source.reader.SingleThreadMultiplexSourceReaderBase;
+import org.apache.flink.connector.base.source.reader.SourceReaderBase;
 import org.apache.flink.connector.base.source.reader.fetcher.SingleThreadFetcherManager;
+import org.apache.flink.connector.base.source.reader.fetcher.SplitFetcherManager;
 import org.apache.flink.connector.base.source.reader.synchronization.FutureCompletingBlockingQueue;
 
 import org.apache.flink.connectors.dummy.source.CloudWatchLogsSplit;
@@ -18,13 +20,13 @@ import javax.annotation.Nullable;
 
 import java.util.Map;
 
-public class CloudWatchLogsSourceReader<T> extends SingleThreadMultiplexSourceReaderBase<OutputLogEvent, T, CloudWatchLogsSplit, CloudWatchSourceSplitState> {
+public class CloudWatchLogsSourceReader<T> extends SourceReaderBase<OutputLogEvent, T, CloudWatchLogsSplit, CloudWatchSourceSplitState> {
 
     private final SourceReaderContext context;
 
     public CloudWatchLogsSourceReader(
             FutureCompletingBlockingQueue<RecordsWithSplitIds<OutputLogEvent>> elementsQueue,
-            SingleThreadFetcherManager<OutputLogEvent, CloudWatchLogsSplit> splitFetcherManager,
+            SplitFetcherManager<OutputLogEvent, CloudWatchLogsSplit> splitFetcherManager,
             RecordEmitter<OutputLogEvent, T, CloudWatchSourceSplitState> recordEmitter,
             Configuration config,
             SourceReaderContext context) {
@@ -34,7 +36,7 @@ public class CloudWatchLogsSourceReader<T> extends SingleThreadMultiplexSourceRe
 
     public CloudWatchLogsSourceReader(
             FutureCompletingBlockingQueue<RecordsWithSplitIds<OutputLogEvent>> elementsQueue,
-            SingleThreadFetcherManager<OutputLogEvent, CloudWatchLogsSplit> splitFetcherManager,
+            SplitFetcherManager<OutputLogEvent, CloudWatchLogsSplit> splitFetcherManager,
             RecordEmitter<OutputLogEvent, T, CloudWatchSourceSplitState> recordEmitter,
             @Nullable RecordEvaluator<T> eofRecordEvaluator,
             Configuration config,
@@ -51,19 +53,19 @@ public class CloudWatchLogsSourceReader<T> extends SingleThreadMultiplexSourceRe
 
     @Override
     protected void onSplitFinished(Map<String, CloudWatchSourceSplitState> finishedSplitIds) {
-
+        // NOT implemented
     }
 
     @Override
     protected CloudWatchSourceSplitState initializedState(CloudWatchLogsSplit split) {
-        return null;
+        return new CloudWatchSourceSplitState(split);
     }
 
     @Override
     protected CloudWatchLogsSplit toSplitType(
             String splitId,
             CloudWatchSourceSplitState splitState) {
-        return null;
+        return splitState.tpSplit();
     }
 
     @Override
