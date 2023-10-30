@@ -41,14 +41,12 @@ public class CloudWatchLogsSource<T> implements Source<T, CloudWatchLogsSplit, C
         return Boundedness.CONTINUOUS_UNBOUNDED;
     }
 
-    // TODO
     @Override
     public SplitEnumerator<CloudWatchLogsSplit, CloudWatchLogsEnumState> createEnumerator(
             SplitEnumeratorContext<CloudWatchLogsSplit> enumContext) throws Exception {
         return new CloudWatchLogsSourceEnumerator(logGroup, streamPrefixes, enumContext);
     }
 
-    // TODO DAY3
     @Override
     public SplitEnumerator<CloudWatchLogsSplit, CloudWatchLogsEnumState> restoreEnumerator(
             SplitEnumeratorContext<CloudWatchLogsSplit> enumContext,
@@ -56,7 +54,6 @@ public class CloudWatchLogsSource<T> implements Source<T, CloudWatchLogsSplit, C
         return null;
     }
 
-    // TODO
     @Override
     public SimpleVersionedSerializer<CloudWatchLogsSplit> getSplitSerializer() {
         return new CloudWatchLogsSplitSerializer(logGroup);

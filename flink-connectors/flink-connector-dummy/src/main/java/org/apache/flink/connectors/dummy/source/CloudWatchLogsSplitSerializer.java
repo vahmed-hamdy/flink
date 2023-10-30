@@ -23,8 +23,7 @@ public class CloudWatchLogsSplitSerializer implements SimpleVersionedSerializer<
 
     @Override
     public byte[] serialize(CloudWatchLogsSplit split) throws IOException {
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-             DataOutputStream out = new DataOutputStream(baos)) {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); DataOutputStream out = new DataOutputStream(baos)) {
             out.writeUTF(logGroup);
             out.writeUTF(split.splitId());
             out.writeBoolean(split.getStartTimeStamp() != null);
@@ -33,7 +32,6 @@ public class CloudWatchLogsSplitSerializer implements SimpleVersionedSerializer<
             out.flush();
             return baos.toByteArray();
         }
-
     }
 
     @Override

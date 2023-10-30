@@ -3,6 +3,7 @@ package org.apache.flink;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.connectors.dummy.source.CloudWatchLogsSource;
+import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.PrintSink;
 
@@ -20,8 +21,8 @@ public class SourceExample {
 
     public static void main(String[] args) throws Exception {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setParallelism(3);
-//        env.enableCheckpointing(1000, CheckpointingMode.AT_LEAST_ONCE);
+        env.setParallelism(1);
+        env.enableCheckpointing(1000, CheckpointingMode.AT_LEAST_ONCE);
         CloudWatchLogsSource<StringWithTime> source = new CloudWatchLogsSource<>(new Convertor(), "flinkConnectorTest", "connectorTest");
         env.fromSource(source, WatermarkStrategy.noWatermarks(), "SingleSource", TypeInformation.of(StringWithTime.class))
                 .sinkTo(new PrintSink<>());

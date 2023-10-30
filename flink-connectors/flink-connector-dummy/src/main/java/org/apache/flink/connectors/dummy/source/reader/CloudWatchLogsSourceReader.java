@@ -67,14 +67,4 @@ public class CloudWatchLogsSourceReader<T> extends SourceReaderBase<OutputLogEve
             CloudWatchSourceSplitState splitState) {
         return splitState.tpSplit();
     }
-
-    @Override
-    public void notifyCheckpointAborted(long checkpointId) throws Exception {
-        super.notifyCheckpointAborted(checkpointId);
-    }
-
-    @Override
-    public void notifyCheckpointComplete(long checkpointId) throws Exception {
-        super.notifyCheckpointComplete(checkpointId);
-    }
 }

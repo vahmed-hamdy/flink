@@ -6,6 +6,7 @@ import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 
 import org.apache.flink.api.connector.source.SplitsAssignment;
 import org.apache.flink.connectors.dummy.source.CloudWatchLogsSplit;
+import org.apache.flink.connectors.dummy.source.FinishedStreamEvent;
 import org.apache.flink.util.FlinkRuntimeException;
 
 import software.amazon.awssdk.auth.credentials.EnvironmentVariableCredentialsProvider;
@@ -18,6 +19,7 @@ import javax.annotation.Nullable;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -31,16 +33,22 @@ public class CloudWatchLogsSourceEnumerator implements SplitEnumerator<CloudWatc
     private final CloudWatchLogsClient logsClient;
     private final SplitEnumeratorContext<CloudWatchLogsSplit> context;
 
-    private List<String> assignedSplits = new ArrayList<>();
-    private List<String> unassignedSplits = new ArrayList<>();
+    private final Set<String> assignedStreams = new HashSet<>();
+    private final Set<String> finishedStreams = new HashSet<>();
 
     private final CloudWatchLogsSplitAssigner splitAssigner;
-
+    public CloudWatchLogsSourceEnumerator(
+            String logGroup,
+            String logStreamPrefix,
+            SplitEnumeratorContext<CloudWatchLogsSplit> context){
+        this(logGroup,logStreamPrefix,context,CloudWatchLogsEnumState.emptyState());
+    }
 
     public CloudWatchLogsSourceEnumerator(
             String logGroup,
             String logStreamPrefix,
-            SplitEnumeratorContext<CloudWatchLogsSplit> context) {
+            SplitEnumeratorContext<CloudWatchLogsSplit> context,
+            CloudWatchLogsEnumState state) {
         this.logGroup = logGroup;
         this.logStreamPrefix = logStreamPrefix;
         this.context = context;
@@ -48,12 +56,18 @@ public class CloudWatchLogsSourceEnumerator implements SplitEnumerator<CloudWatc
                 .credentialsProvider(EnvironmentVariableCredentialsProvider.create())
                 .region(Region.US_EAST_1)
                 .build();
-        this.splitAssigner = new CloudWatchLogsSplitAssigner(context.registeredReaders().size());
-    }
-
-    @Override
-    public void notifyCheckpointAborted(long checkpointId) throws Exception {
-        //TODO DAY3
+        this.splitAssigner = new CloudWatchLogsSplitAssigner();
+        this.finishedStreams.addAll(Arrays.asList(state.getFinishesSplits()));
+        HashMap<Integer, List<String>> splitTable = new HashMap<>();
+        for(CloudWatchLogsEnumState.AssignedSplitState splitState : state.getAssignedSplits()) {
+            if(!splitTable.containsKey(splitState.getReader())) {
+                splitTable.put(splitState.getReader(), new ArrayList<>());
+            }
+            splitTable.get(splitState.getReader()).add(splitState.getSplitId());
+        }
+        for(Map.Entry<Integer, List<String>> entry : splitTable.entrySet()) {
+            splitAssigner.addSplitsToReader(entry.getKey(), entry.getValue());
+        }
     }
 
     @Override
@@ -69,7 +83,11 @@ public class CloudWatchLogsSourceEnumerator implements SplitEnumerator<CloudWatc
 
     @Override
     public void addSplitsBack(List<CloudWatchLogsSplit> splits, int subtaskId) {
-        // TODO
+        splitAssigner.addSplitsToReader(subtaskId, splits.stream().map(CloudWatchLogsSplit::splitId).collect(
+                Collectors.toList()));
+        HashMap<Integer, List<CloudWatchLogsSplit>> assignment = new HashMap<>();
+        assignment.put(subtaskId, splits);
+        context.assignSplits(new SplitsAssignment<>(assignment));
     }
 
     @Override
@@ -79,8 +97,7 @@ public class CloudWatchLogsSourceEnumerator implements SplitEnumerator<CloudWatc
 
     @Override
     public CloudWatchLogsEnumState snapshotState(long checkpointId) throws Exception {
-        //TODO DAY3
-        return null;
+       return new CloudWatchLogsEnumState(splitAssigner.assignedState(), finishedStreams.toArray(new String[0]));
     }
 
     @Override
@@ -89,13 +106,13 @@ public class CloudWatchLogsSourceEnumerator implements SplitEnumerator<CloudWatc
     }
 
     @Override
-    public void notifyCheckpointComplete(long checkpointId) throws Exception {
-        //TODO: DAY3
-    }
-
-    @Override
     public void handleSourceEvent(int subtaskId, SourceEvent sourceEvent) {
-        // TODO: figure out if needed
+        if(sourceEvent instanceof FinishedStreamEvent) {
+            FinishedStreamEvent event = (FinishedStreamEvent) sourceEvent;
+            splitAssigner.remove(subtaskId, event.getLogStream());
+            assignedStreams.remove(event.getLogStream());
+            finishedStreams.add(event.getLogStream());
+        }
     }
 
     private Set<LogStream> getStreamsInGroup() {
@@ -112,11 +129,12 @@ public class CloudWatchLogsSourceEnumerator implements SplitEnumerator<CloudWatc
         }
         Set<String> logStreamMap = logStreams.stream().map(LogStream::logStreamName).collect(
                 Collectors.toSet());
-        assignedSplits.removeIf(split -> !logStreamMap.contains(split));
-        unassignedSplits.removeIf(split -> !logStreamMap.contains(split));
+        finishedStreams.addAll(assignedStreams.stream().filter(split -> !logStreamMap.contains(split)).collect(
+                Collectors.toSet()));
+        assignedStreams.removeIf(split -> !logStreamMap.contains(split));
 
         Map<CloudWatchLogsSplit, Integer> newSplits = logStreams.stream()
-                .filter(logStream -> !assignedSplits.contains(logStream.logStreamName()) && !unassignedSplits.contains(logStream.logStreamName()))
+                .filter(logStream -> !assignedStreams.contains(logStream.logStreamName()) && !finishedStreams.contains(logStream.logStreamName()))
                 .map(ls -> new CloudWatchLogsSplit(logGroup, ls.logStreamName(), ls.firstEventTimestamp() - 60_000))
                 .collect(Collectors.toMap(split -> split, splitAssigner::assignSplit));
         Map<Integer, List<CloudWatchLogsSplit>> newAssignment = new HashMap<>();
@@ -132,7 +150,7 @@ public class CloudWatchLogsSourceEnumerator implements SplitEnumerator<CloudWatc
                 newAssignment.remove(reader);
             }
         }
-        assignedSplits.addAll(newSplits.keySet().stream().map(CloudWatchLogsSplit::splitId).collect(Collectors.toList()));
+        assignedStreams.addAll(newSplits.keySet().stream().map(CloudWatchLogsSplit::splitId).collect(Collectors.toList()));
         context.assignSplits(new SplitsAssignment<>(newAssignment));
     }
 }
