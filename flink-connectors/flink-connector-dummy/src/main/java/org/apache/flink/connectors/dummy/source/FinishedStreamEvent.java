@@ -2,14 +2,16 @@ package org.apache.flink.connectors.dummy.source;
 
 import org.apache.flink.api.connector.source.SourceEvent;
 
-public class FinishedStreamEvent implements SourceEvent {
-    private final String logStream;
+import java.util.List;
 
-    public FinishedStreamEvent(String logStream) {
-        this.logStream = logStream;
+public class FinishedStreamEvent implements SourceEvent {
+    private final List<String> logStreams;
+
+    public FinishedStreamEvent(List<String> logStreams) {
+        this.logStreams = logStreams;
     }
 
-    public String getLogStream() {
-        return logStream;
+    public List<String> getLogStream() {
+        return logStreams;
     }
 }

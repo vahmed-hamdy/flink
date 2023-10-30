@@ -109,9 +109,12 @@ public class CloudWatchLogsSourceEnumerator implements SplitEnumerator<CloudWatc
     public void handleSourceEvent(int subtaskId, SourceEvent sourceEvent) {
         if(sourceEvent instanceof FinishedStreamEvent) {
             FinishedStreamEvent event = (FinishedStreamEvent) sourceEvent;
-            splitAssigner.remove(subtaskId, event.getLogStream());
-            assignedStreams.remove(event.getLogStream());
-            finishedStreams.add(event.getLogStream());
+            for(String stream : event.getLogStream()) {
+                splitAssigner.remove(subtaskId, stream);
+                assignedStreams.remove(stream);
+                finishedStreams.add(stream);
+                System.out.println("Enumerator removed " + stream);
+            }
         }
     }
 

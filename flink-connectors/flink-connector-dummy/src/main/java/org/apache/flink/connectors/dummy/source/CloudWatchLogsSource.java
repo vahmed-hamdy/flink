@@ -8,9 +8,9 @@ import org.apache.flink.api.connector.source.SplitEnumerator;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
-import org.apache.flink.connector.base.source.reader.fetcher.SingleThreadFetcherManager;
 import org.apache.flink.connector.base.source.reader.synchronization.FutureCompletingBlockingQueue;
 import org.apache.flink.connectors.dummy.source.enumerator.CloudWatchLogsEnumState;
+import org.apache.flink.connectors.dummy.source.enumerator.CloudWatchLogsEnumStateSerializer;
 import org.apache.flink.connectors.dummy.source.enumerator.CloudWatchLogsSourceEnumerator;
 import org.apache.flink.connectors.dummy.source.reader.CloudWatchLogsRecordEmitter;
 import org.apache.flink.connectors.dummy.source.reader.CloudWatchLogsSourceReader;
@@ -20,7 +20,6 @@ import org.apache.flink.core.io.SimpleVersionedSerializer;
 
 import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent;
 
-import java.io.IOException;
 import java.util.function.Function;
 
 public class CloudWatchLogsSource<T> implements Source<T, CloudWatchLogsSplit, CloudWatchLogsEnumState> {
@@ -51,7 +50,7 @@ public class CloudWatchLogsSource<T> implements Source<T, CloudWatchLogsSplit, C
     public SplitEnumerator<CloudWatchLogsSplit, CloudWatchLogsEnumState> restoreEnumerator(
             SplitEnumeratorContext<CloudWatchLogsSplit> enumContext,
             CloudWatchLogsEnumState checkpoint) throws Exception {
-        return null;
+        return new CloudWatchLogsSourceEnumerator(logGroup, streamPrefixes, enumContext, checkpoint);
     }
 
     @Override
@@ -59,34 +58,16 @@ public class CloudWatchLogsSource<T> implements Source<T, CloudWatchLogsSplit, C
         return new CloudWatchLogsSplitSerializer(logGroup);
     }
 
-    // TODO
     @Override
     public SimpleVersionedSerializer<CloudWatchLogsEnumState> getEnumeratorCheckpointSerializer() {
-        return new SimpleVersionedSerializer<CloudWatchLogsEnumState>() {
-            @Override
-            public int getVersion() {
-                return 0;
-            }
-
-            @Override
-            public byte[] serialize(CloudWatchLogsEnumState obj) throws IOException {
-                return new byte[0];
-            }
-
-            @Override
-            public CloudWatchLogsEnumState deserialize(
-                    int version,
-                    byte[] serialized) throws IOException {
-                return null;
-            }
-        };
+        return new CloudWatchLogsEnumStateSerializer();
     }
 
     @Override
     public SourceReader<T, CloudWatchLogsSplit> createReader(SourceReaderContext readerContext) throws Exception {
         FutureCompletingBlockingQueue<RecordsWithSplitIds<OutputLogEvent>> eq = new FutureCompletingBlockingQueue<>();
         return new CloudWatchLogsSourceReader<>(eq,
-                new CloudWatchLogsFetcherManager(eq, () -> new CloudWatchLogsStreamReader(logGroup), new Configuration()),
+                new CloudWatchLogsFetcherManager(eq, () -> new CloudWatchLogsStreamReader(logGroup), new Configuration(), strings -> strings.forEach(s -> System.out.println("Reader removed " + s))),
                 new CloudWatchLogsRecordEmitter<>(converter),
                 new Configuration(),
                 readerContext);

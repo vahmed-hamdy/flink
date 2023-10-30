@@ -13,6 +13,7 @@ import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
 import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogEventsRequest;
 import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogEventsResponse;
 import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent;
+import software.amazon.awssdk.services.cloudwatchlogs.model.ResourceNotFoundException;
 
 import javax.annotation.Nullable;
 
@@ -49,7 +50,8 @@ public class CloudWatchLogsStreamReader implements SplitReader<OutputLogEvent, C
             return null;
         }
         CloudWatchLogsSplit split = streamsToReadFrom.get(0);
-        // TODO
+        boolean isFinished = false;
+        // TODO support NextToken
         GetLogEventsRequest request = GetLogEventsRequest.builder()
                 .logGroupName(logGroup)
                 .logStreamName(split.splitId())
@@ -58,11 +60,18 @@ public class CloudWatchLogsStreamReader implements SplitReader<OutputLogEvent, C
                 .startFromHead(true)
                 .limit(100) // TODO: configure
                 .build();
-        GetLogEventsResponse response = this.logsClient.getLogEvents(request);
-        split.setStartTimeStamp(response.events().stream().map(OutputLogEvent::timestamp).max(Long::compare).orElse(split.getStartTimeStamp()) + 1);
-        Iterator<OutputLogEvent> eventIterator = response.events().iterator();
+        List<OutputLogEvent> logEvents = new ArrayList<>();
+        try {
+            GetLogEventsResponse response = this.logsClient.getLogEvents(request);
 
+            split.setStartTimeStamp(response.events().stream().map(OutputLogEvent::timestamp).max(Long::compare).orElse(split.getStartTimeStamp()) + 1);
+            logEvents = response.events();
+        } catch (ResourceNotFoundException ignored) {
+            isFinished = true;
+        }
+        Iterator<OutputLogEvent> eventIterator = logEvents.iterator();
 
+        boolean finalIsFinished = isFinished;
         return new RecordsWithSplitIds<OutputLogEvent>() {
             @Nullable
             @Override
@@ -83,7 +92,7 @@ public class CloudWatchLogsStreamReader implements SplitReader<OutputLogEvent, C
             // Currently we do not support finished log streams
             @Override
             public Set<String> finishedSplits() {
-                return Collections.emptySet();
+                return finalIsFinished ? Collections.singleton(split.splitId()) : Collections.emptySet();
             }
         };
     }

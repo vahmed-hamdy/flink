@@ -14,11 +14,15 @@ import org.apache.flink.connector.base.source.reader.synchronization.FutureCompl
 import org.apache.flink.connectors.dummy.source.CloudWatchLogsSplit;
 import org.apache.flink.connectors.dummy.source.CloudWatchSourceSplitState;
 
+import org.apache.flink.connectors.dummy.source.FinishedStreamEvent;
+
 import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent;
 
 import javax.annotation.Nullable;
 
+import java.util.ArrayList;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class CloudWatchLogsSourceReader<T> extends SourceReaderBase<OutputLogEvent, T, CloudWatchLogsSplit, CloudWatchSourceSplitState> {
 
@@ -53,7 +57,11 @@ public class CloudWatchLogsSourceReader<T> extends SourceReaderBase<OutputLogEve
 
     @Override
     protected void onSplitFinished(Map<String, CloudWatchSourceSplitState> finishedSplitIds) {
-        // NOT implemented
+        splitFetcherManager.removeSplits(finishedSplitIds.values().stream().map(
+                CloudWatchSourceSplitState::tpSplit).collect(
+                Collectors.toList()));
+
+        context.sendSourceEventToCoordinator(new FinishedStreamEvent(new ArrayList<>(finishedSplitIds.keySet())));
     }
 
     @Override
