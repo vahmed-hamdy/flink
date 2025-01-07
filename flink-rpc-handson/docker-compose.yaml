@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper:3.4.6
+    ports:
+      - "2181:2181"
+    networks:
+      - rpc-network
+
+  server:
+    image: flink-rpc-handson:latest
+    ports:
+      - "9127:9127"
+    environment:
+      - PROGRAM_NAME=server
+      - SERVER_URL=server
+      - CLIENT_URL=client
+      - CLIENT_PORT=9125
+      - SERVER_PORT=9127
+    networks:
+      - rpc-network
+    volumes:
+      - /Users/ahmedhamdy/flink/flink/flink-rpc-handson/src/opt:/tmp
+    depends_on:
+      - zookeeper
+
+  client:
+    image: flink-rpc-handson:latest
+    ports:
+      - "9125:9125"
+    environment:
+      - PROGRAM_NAME=client
+      - SERVER_URL=server
+      - CLIENT_URL=client
+      - CLIENT_PORT=9125
+      - SERVER_PORT=9127
+    volumes:
+      - /Users/ahmedhamdy/flink/flink/flink-rpc-handson/src/opt:/tmp
+
+    networks:
+      - rpc-network
+    depends_on:
+        - server
+        - zookeeper
+
+
+networks:
+    rpc-network:
+        driver: bridge
