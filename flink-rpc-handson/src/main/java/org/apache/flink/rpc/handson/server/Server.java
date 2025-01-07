@@ -18,20 +18,31 @@
 
 package org.apache.flink.rpc.handson.server;
 
-import org.apache.flink.runtime.rpc.RpcEndpoint;
+import org.apache.flink.runtime.rpc.FencedRpcEndpoint;
 import org.apache.flink.runtime.rpc.RpcService;
 
 import java.util.concurrent.CompletableFuture;
 
-public class Server extends RpcEndpoint implements ServerGateway {
+public class Server extends FencedRpcEndpoint<ServerId> implements ServerGateway {
     private final ServerProxy proxy;
 
     private ServerId serverId;
 
-    protected Server(RpcService rpcService, String endpointId) {
-        super(rpcService, endpointId);
-        this.serverId = new ServerId();
+    protected Server(RpcService rpcService, ServerId serverId, String endpointId) {
+        super(rpcService, endpointId, serverId);
+        this.serverId = serverId;
         this.proxy = new ServerProxy(serverId, getAddress());
+    }
+
+    @Override
+    public void onStart() {
+        System.out.println("FencedRpcEndpoint started with token: " + getFencingToken() + "and address " + getAddress());
+    }
+
+    @Override
+    public CompletableFuture<Void> onStop() {
+        System.out.println("FencedRpcEndpoint stopping.");
+        return CompletableFuture.completedFuture(null);
     }
 
     @Override

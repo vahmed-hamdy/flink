@@ -67,7 +67,7 @@ public abstract class AbstractHaServices implements HighAvailabilityServices {
 
     private final JobResultStore jobResultStore;
 
-    private final DefaultLeaderElectionService leaderElectionService;
+    protected final DefaultLeaderElectionService leaderElectionService;
 
     protected AbstractHaServices(
             Configuration config,

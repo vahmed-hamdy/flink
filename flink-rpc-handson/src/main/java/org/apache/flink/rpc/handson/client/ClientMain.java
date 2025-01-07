@@ -26,6 +26,11 @@ import org.apache.flink.runtime.jobmaster.JobMasterServiceLeadershipRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+
 public class ClientMain implements AbstractMain {
     private static final Logger LOG =
             LoggerFactory.getLogger(ClientMain.class);
@@ -33,13 +38,13 @@ public class ClientMain implements AbstractMain {
 
     private boolean isStarted = false;
 
-    private EnvVar serverUrl = new EnvVar("SERVER_URL", "localhost");
+    private EnvVar serverUrl = new EnvVar("SERVER_URL", null);
     private EnvVar serverPort = new EnvVar("SERVER_PORT", "9127");
     public ClientMain() {
         LOG.info("Starting client Main");
         System.out.println("Starting client Main");
         try {
-            clientGateway = ClientFactory.INSTANCE.createClient(Constants.getCommonConfiguration(false), serverUrl.getValue(), serverPort.getValue());
+            clientGateway = ClientFactory.INSTANCE.createClient(serverUrl.getValue(), serverPort.getValue());
             LOG.info("Client created");
             System.out.println("Client created");
             isStarted = true;
@@ -53,7 +58,11 @@ public class ClientMain implements AbstractMain {
     public void start() {
         LOG.info("Starting client main");
         System.out.println("Starting client main");
-        run();
+        try {
+            run();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -61,28 +70,31 @@ public class ClientMain implements AbstractMain {
         isStarted = false;
     }
 
-    private void run() {
+    private void run() throws InterruptedException, ExecutionException {
         clientGateway.awaitServer();
 
         int i = 0;
+        List<CompletableFuture<?>> futureList = new ArrayList<>();
         while (isStarted) {
+            Thread.sleep(100);
             if(i % 100 == 0) {
+                futureList.forEach(CompletableFuture::join);
                 int finalI1 = i;
                 clientGateway.getState()
                         .thenApply(state -> {
                             System.out.println("Client state: " + state + " for i=" + finalI1);
                             LOG.info("Client state: {} for i={}", state, finalI1);
                             return state;
-                        });
+                        }).get();
             } else {
                 String randomString = "test" + i;
                 int finalI = i;
-                clientGateway.alterString(randomString)
+                futureList.add(clientGateway.alterString(randomString)
                         .thenApply(altered -> {
                             System.out.println("Altered string: " + altered + " for i=" + finalI);
                             LOG.info("Altered string: {} for i={}", altered, finalI);
                             return altered;
-                        });
+                        }));
             }
             i++;
         }

@@ -28,7 +28,12 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 public class Dummy {
+
     public static void main(String[] args) throws Exception {
+        testServerRpcConnection();
+    }
+
+    private static void testServerRpcConnection() throws Exception {
         Configuration config = new Configuration();
         RpcService rpcService = RpcUtils.createRemoteRpcService(
                 RpcSystem.load(config),
@@ -39,7 +44,7 @@ public class Dummy {
                 Optional.of(9123)
         );
 
-        String serverAddress = "pekko.tcp://flink@localhost:9127/user/server";
+        String serverAddress = "pekko.tcp://flink@localhost:9127/user/rpc/server";
 
         System.out.println("Connecting to server at: " + serverAddress);
 

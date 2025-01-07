@@ -22,20 +22,39 @@ import org.apache.flink.configuration.Configuration;
 
 public class Constants {
 
-    public static Configuration getCommonConfiguration(boolean isServer) {
+    public enum Role {
+        SERVER,
+        CLIENT,
+        ZOOKEEPER
+    }
+
+
+    @Deprecated
+    public static Configuration getCommonConfiguration(boolean isServer){
+        return getCommonConfiguration(isServer ? Role.SERVER : Role.CLIENT, false);
+    }
+
+    public static Configuration getCommonConfiguration(Role role, boolean haEnabled) {
         EnvVar serverUrl = new EnvVar("SERVER_URL", "localhost");
         EnvVar serverPort = new EnvVar("SERVER_PORT", "9127");
         EnvVar clientPort = new EnvVar("CLIENT_PORT", "9125");
         EnvVar clientAddress = new EnvVar("CLIENT_ADDRESS", "localhost");
         Configuration conf =  getCommonConfiguration(serverUrl.getValue(), serverPort.getValue(), clientPort.getValue(), clientAddress.getValue());
-        if (isServer) {
+        if (role == Role.SERVER && !haEnabled) {
             conf.setString("rpc.address", serverUrl.getValue());
             conf.setString("rpc.bind.address", serverUrl.getValue());
             conf.setString("rpc.port", serverPort.getValue());
-        } else {
+        } else if (role == Role.CLIENT && !haEnabled) {
             conf.setString("rpc.address", clientAddress.getValue());
             conf.setString("rpc.bind.address", serverUrl.getValue());
             conf.setString("rpc.port", clientPort.getValue());
+        } else if (role == Role.ZOOKEEPER) {
+            EnvVar zookeeperUrl = new EnvVar("ZOOKEEPER_ADDRESS", "zookeeper:2181");
+            conf.setString("high-availability", "zookeeper");
+            conf.setString("high-availability.zookeeper.quorum", zookeeperUrl.getValue());
+            conf.setString("high-availability.zookeeper.path.root", "/flink-ha");
+            conf.setString("high-availability.storageDir", "file:///tmp/ha/");
+            conf.setString("high-availability.cluster-id", "cluster1");
         }
         return conf;
     }

@@ -18,24 +18,10 @@
 
 package org.apache.flink.rpc.handson.server;
 
-import org.apache.flink.util.AbstractID;
+import javax.annotation.Nonnull;
 
-import java.util.UUID;
+public interface ServerFactory {
 
-public class ServerId extends AbstractID {
-    public ServerId() {
-        super();
-    }
-
-    public ServerId(long lowerPart, long upperPart) {
-        super(lowerPart, upperPart);
-    }
-
-    public static ServerId fromUUID(UUID id) {
-        return new ServerId(id.getLeastSignificantBits(), id.getMostSignificantBits());
-    }
-
-    public UUID toUUID() {
-        return new UUID(getUpperPart(), getLowerPart());
-    }
+    @Nonnull
+    Server createServer(ServerId serverId) throws Exception;
 }

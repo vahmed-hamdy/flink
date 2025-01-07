@@ -25,6 +25,12 @@ import java.util.concurrent.CompletableFuture;
 
 @Unused(reason = "This is a placeholder for the actual server service")
 public interface ServerService extends AutoCloseableAsync {
+    /**
+     * Start the service.
+     *
+     * @throws Exception if the service cannot be started
+     */
+    void start() throws Exception;
     ServerGateway getGateway();
 
     String getAddress();
