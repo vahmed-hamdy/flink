@@ -22,8 +22,6 @@ import org.apache.flink.rpc.handson.Unused;
 import org.apache.flink.util.AutoCloseableAsync;
 
 import java.util.concurrent.CompletableFuture;
-
-@Unused(reason = "This is a placeholder for the actual server service")
 public interface ServerService extends AutoCloseableAsync {
     /**
      * Start the service.
@@ -31,6 +29,8 @@ public interface ServerService extends AutoCloseableAsync {
      * @throws Exception if the service cannot be started
      */
     void start() throws Exception;
+
+    @Unused(reason = "This method is not used in the example")
     ServerGateway getGateway();
 
     String getAddress();

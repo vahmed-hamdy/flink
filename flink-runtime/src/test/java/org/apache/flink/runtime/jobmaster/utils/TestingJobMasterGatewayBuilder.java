@@ -80,34 +80,34 @@ import java.util.function.Supplier;
 
 /** Builder for {@link TestingJobMasterGateway}. */
 public class TestingJobMasterGatewayBuilder {
-    private static final ResourceID RESOURCE_MANAGER_ID = ResourceID.generate();
-    private static final JobMasterId JOB_MASTER_ID = JobMasterId.generate();
+    protected static final ResourceID RESOURCE_MANAGER_ID = ResourceID.generate();
+    protected static final JobMasterId JOB_MASTER_ID = JobMasterId.generate();
 
-    private String address = "pekko.tcp://flink@localhost:6130/user/jobmanager";
-    private String hostname = "localhost";
-    private Supplier<CompletableFuture<Acknowledge>> cancelFunction =
+    protected String address = "pekko.tcp://flink@localhost:6130/user/jobmanager";
+    protected String hostname = "localhost";
+    protected Supplier<CompletableFuture<Acknowledge>> cancelFunction =
             () -> CompletableFuture.completedFuture(Acknowledge.get());
-    private Function<TaskExecutionState, CompletableFuture<Acknowledge>>
+    protected Function<TaskExecutionState, CompletableFuture<Acknowledge>>
             updateTaskExecutionStateFunction =
                     ignored -> CompletableFuture.completedFuture(Acknowledge.get());
-    private BiFunction<JobVertexID, ExecutionAttemptID, CompletableFuture<SerializedInputSplit>>
+    protected BiFunction<JobVertexID, ExecutionAttemptID, CompletableFuture<SerializedInputSplit>>
             requestNextInputSplitFunction =
                     (ignoredA, ignoredB) ->
                             CompletableFuture.completedFuture(new SerializedInputSplit(null));
-    private BiFunction<IntermediateDataSetID, ResultPartitionID, CompletableFuture<ExecutionState>>
+    protected BiFunction<IntermediateDataSetID, ResultPartitionID, CompletableFuture<ExecutionState>>
             requestPartitionStateFunction =
                     (ignoredA, ignoredB) ->
                             CompletableFuture.completedFuture(ExecutionState.RUNNING);
-    private Function<ResourceID, CompletableFuture<Acknowledge>> disconnectTaskManagerFunction =
+    protected Function<ResourceID, CompletableFuture<Acknowledge>> disconnectTaskManagerFunction =
             ignored -> CompletableFuture.completedFuture(Acknowledge.get());
-    private Consumer<ResourceManagerId> disconnectResourceManagerConsumer = ignored -> {};
-    private BiFunction<ResourceID, Collection<SlotOffer>, CompletableFuture<Collection<SlotOffer>>>
+    protected Consumer<ResourceManagerId> disconnectResourceManagerConsumer = ignored -> {};
+    protected BiFunction<ResourceID, Collection<SlotOffer>, CompletableFuture<Collection<SlotOffer>>>
             offerSlotsFunction =
                     (ignoredA, ignoredB) ->
                             CompletableFuture.completedFuture(Collections.emptyList());
-    private TriConsumer<ResourceID, AllocationID, Throwable> failSlotConsumer =
+    protected TriConsumer<ResourceID, AllocationID, Throwable> failSlotConsumer =
             (ignoredA, ignoredB, ignoredC) -> {};
-    private BiFunction<
+    protected BiFunction<
                     JobID,
                     TaskManagerRegistrationInformation,
                     CompletableFuture<RegistrationResponse>>
@@ -115,90 +115,90 @@ public class TestingJobMasterGatewayBuilder {
                     (ignoredA, ignoredB) ->
                             CompletableFuture.completedFuture(
                                     new JMTMRegistrationSuccess(RESOURCE_MANAGER_ID));
-    private BiFunction<
+    protected BiFunction<
                     ResourceID, TaskExecutorToJobManagerHeartbeatPayload, CompletableFuture<Void>>
             taskManagerHeartbeatFunction =
                     (ignoredA, ignoredB) -> FutureUtils.completedVoidFuture();
-    private Function<ResourceID, CompletableFuture<Void>> resourceManagerHeartbeatFunction =
+    protected Function<ResourceID, CompletableFuture<Void>> resourceManagerHeartbeatFunction =
             ignored -> FutureUtils.completedVoidFuture();
-    private Supplier<CompletableFuture<JobStatus>> requestJobStatusSupplier =
+    protected Supplier<CompletableFuture<JobStatus>> requestJobStatusSupplier =
             () -> FutureUtils.completedExceptionally(new UnsupportedOperationException());
-    private Supplier<CompletableFuture<ExecutionGraphInfo>> requestJobSupplier =
+    protected Supplier<CompletableFuture<ExecutionGraphInfo>> requestJobSupplier =
             () -> FutureUtils.completedExceptionally(new UnsupportedOperationException());
-    private Supplier<CompletableFuture<CheckpointStatsSnapshot>> checkpointStatsSnapshotSupplier =
+    protected Supplier<CompletableFuture<CheckpointStatsSnapshot>> checkpointStatsSnapshotSupplier =
             () -> FutureUtils.completedExceptionally(new UnsupportedOperationException());
-    private TriFunction<String, Boolean, SavepointFormatType, CompletableFuture<String>>
+    protected TriFunction<String, Boolean, SavepointFormatType, CompletableFuture<String>>
             triggerSavepointFunction =
                     (targetDirectory, ignoredB, formatType) ->
                             CompletableFuture.completedFuture(
                                     targetDirectory != null
                                             ? targetDirectory
                                             : UUID.randomUUID().toString());
-    private Function<CheckpointType, CompletableFuture<CompletedCheckpoint>>
+    protected Function<CheckpointType, CompletableFuture<CompletedCheckpoint>>
             triggerCheckpointFunction = (prop) -> new CompletableFuture<>();
-    private TriFunction<String, Boolean, SavepointFormatType, CompletableFuture<String>>
+    protected TriFunction<String, Boolean, SavepointFormatType, CompletableFuture<String>>
             stopWithSavepointFunction =
                     (targetDirectory, ignoredB, formatType) ->
                             CompletableFuture.completedFuture(
                                     targetDirectory != null
                                             ? targetDirectory
                                             : UUID.randomUUID().toString());
-    private Consumer<Tuple5<JobID, ExecutionAttemptID, Long, CheckpointMetrics, TaskStateSnapshot>>
+    protected Consumer<Tuple5<JobID, ExecutionAttemptID, Long, CheckpointMetrics, TaskStateSnapshot>>
             acknowledgeCheckpointConsumer = ignored -> {};
-    private Consumer<DeclineCheckpoint> declineCheckpointConsumer = ignored -> {};
-    private Supplier<JobMasterId> fencingTokenSupplier = () -> JOB_MASTER_ID;
-    private BiFunction<JobID, String, CompletableFuture<KvStateLocation>>
+    protected Consumer<DeclineCheckpoint> declineCheckpointConsumer = ignored -> {};
+    protected Supplier<JobMasterId> fencingTokenSupplier = () -> JOB_MASTER_ID;
+    protected BiFunction<JobID, String, CompletableFuture<KvStateLocation>>
             requestKvStateLocationFunction =
                     (ignoredA, registrationName) ->
                             FutureUtils.completedExceptionally(
                                     new UnknownKvStateLocation(registrationName));
-    private Function<
+    protected Function<
                     Tuple6<JobID, JobVertexID, KeyGroupRange, String, KvStateID, InetSocketAddress>,
                     CompletableFuture<Acknowledge>>
             notifyKvStateRegisteredFunction =
                     ignored -> CompletableFuture.completedFuture(Acknowledge.get());
-    private Function<
+    protected Function<
                     Tuple4<JobID, JobVertexID, KeyGroupRange, String>,
                     CompletableFuture<Acknowledge>>
             notifyKvStateUnregisteredFunction =
                     ignored -> CompletableFuture.completedFuture(Acknowledge.get());
-    private TriFunction<String, Object, byte[], CompletableFuture<Object>> updateAggregateFunction =
+    protected TriFunction<String, Object, byte[], CompletableFuture<Object>> updateAggregateFunction =
             (a, b, c) -> CompletableFuture.completedFuture(new Object());
-    private TriFunction<
+    protected TriFunction<
                     ExecutionAttemptID,
                     OperatorID,
                     SerializedValue<OperatorEvent>,
                     CompletableFuture<Acknowledge>>
             operatorEventSender = (a, b, c) -> CompletableFuture.completedFuture(Acknowledge.get());
-    private BiFunction<
+    protected BiFunction<
                     OperatorID,
                     SerializedValue<CoordinationRequest>,
                     CompletableFuture<CoordinationResponse>>
             deliverCoordinationRequestFunction =
                     (a, b) ->
                             FutureUtils.completedExceptionally(new UnsupportedOperationException());
-    private Consumer<Collection<ResourceRequirement>> notifyNotEnoughResourcesConsumer =
+    protected Consumer<Collection<ResourceRequirement>> notifyNotEnoughResourcesConsumer =
             ignored -> {};
 
-    private Function<Collection<BlockedNode>, CompletableFuture<Acknowledge>>
+    protected Function<Collection<BlockedNode>, CompletableFuture<Acknowledge>>
             notifyNewBlockedNodesFunction =
                     ignored -> CompletableFuture.completedFuture(Acknowledge.get());
 
-    private Supplier<CompletableFuture<Map<JobVertexID, Integer>>> maxParallelismPerVertexSupplier =
+    protected Supplier<CompletableFuture<Map<JobVertexID, Integer>>> maxParallelismPerVertexSupplier =
             () -> CompletableFuture.completedFuture(Collections.emptyMap());
 
-    private Supplier<CompletableFuture<JobResourceRequirements>>
+    protected Supplier<CompletableFuture<JobResourceRequirements>>
             requestJobResourceRequirementsSupplier =
                     () -> CompletableFuture.completedFuture(JobResourceRequirements.empty());
 
-    private BiFunction<
+    protected BiFunction<
                     Duration,
                     Set<ResultPartitionID>,
                     CompletableFuture<Collection<PartitionWithMetrics>>>
             getPartitionWithMetricsFunction =
                     (timeout, set) -> CompletableFuture.completedFuture(Collections.emptyList());
 
-    private Function<JobResourceRequirements, CompletableFuture<Acknowledge>>
+    protected Function<JobResourceRequirements, CompletableFuture<Acknowledge>>
             updateJobResourceRequirementsFunction =
                     ignored -> CompletableFuture.completedFuture(Acknowledge.get());
 

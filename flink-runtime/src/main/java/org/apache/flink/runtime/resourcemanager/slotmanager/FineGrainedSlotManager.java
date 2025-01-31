@@ -299,6 +299,7 @@ public class FineGrainedSlotManager implements SlotManager {
 
     @Override
     public void processResourceRequirements(ResourceRequirements resourceRequirements) {
+        System.out.println("[FineGrainedSlotManager] Processing resource requirements: " + resourceRequirements);
         checkInit();
         if (resourceRequirements.getResourceRequirements().isEmpty()
                 && resourceTracker.isRequirementEmpty(resourceRequirements.getJobId())) {
@@ -307,6 +308,7 @@ public class FineGrainedSlotManager implements SlotManager {
         }
 
         if (resourceRequirements.getResourceRequirements().isEmpty()) {
+            System.out.println("[FineGrainedSlotManager] Clearing resource requirements of job " + resourceRequirements.getJobId());
             LOG.info("Clearing resource requirements of job {}", resourceRequirements.getJobId());
             jobMasterTargetAddresses.remove(resourceRequirements.getJobId());
             if (resourceAllocator.isSupported()) {
@@ -317,10 +319,12 @@ public class FineGrainedSlotManager implements SlotManager {
                     "Received resource requirements from job {}: {}",
                     resourceRequirements.getJobId(),
                     resourceRequirements.getResourceRequirements());
+            System.out.println("[FineGrainedSlotManager] Adding Job requirements " + resourceRequirements.getJobId());
+
             jobMasterTargetAddresses.put(
                     resourceRequirements.getJobId(), resourceRequirements.getTargetAddress());
         }
-
+        System.out.println("[FineGrainedSlotManager] Notifying resource requirements: " + resourceRequirements);
         resourceTracker.notifyResourceRequirements(
                 resourceRequirements.getJobId(), resourceRequirements.getResourceRequirements());
         checkResourceRequirementsWithDelay();

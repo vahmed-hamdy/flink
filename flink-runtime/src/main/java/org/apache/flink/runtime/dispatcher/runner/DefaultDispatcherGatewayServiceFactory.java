@@ -54,7 +54,7 @@ class DefaultDispatcherGatewayServiceFactory
 
     @Override
     public AbstractDispatcherLeaderProcess.DispatcherGatewayService create(
-            DispatcherId fencingToken,
+            DispatcherId  fencingToken,
             Collection<ExecutionPlan> recoveredJobs,
             Collection<JobResult> recoveredDirtyJobResults,
             ExecutionPlanWriter executionPlanWriter,

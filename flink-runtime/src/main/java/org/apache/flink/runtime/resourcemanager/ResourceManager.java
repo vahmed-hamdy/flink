@@ -126,7 +126,7 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
     public static final String RESOURCE_MANAGER_NAME = "resourcemanager";
 
     /** Unique id of the resource manager. */
-    private final ResourceID resourceId;
+    protected final ResourceID resourceId;
 
     /** All currently registered JobMasterGateways scoped by JobID. */
     private final Map<JobID, JobManagerRegistration> jobManagerRegistrations;
@@ -135,7 +135,7 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
     private final Map<ResourceID, JobManagerRegistration> jmResourceIdRegistrations;
 
     /** Service to retrieve the job leader ids. */
-    private final JobLeaderIdService jobLeaderIdService;
+    protected final JobLeaderIdService jobLeaderIdService;
 
     /** All currently registered TaskExecutors with there framework specific worker information. */
     private final Map<ResourceID, WorkerRegistration<WorkerType>> taskExecutors;
@@ -144,31 +144,31 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
     private final Map<ResourceID, CompletableFuture<TaskExecutorGateway>>
             taskExecutorGatewayFutures;
 
-    private final HeartbeatServices heartbeatServices;
+    protected final HeartbeatServices heartbeatServices;
 
     /** Fatal error handler. */
-    private final FatalErrorHandler fatalErrorHandler;
+    protected final FatalErrorHandler fatalErrorHandler;
 
     /** The slot manager maintains the available slots. */
-    private final SlotManager slotManager;
+    protected final SlotManager slotManager;
 
-    private final ResourceManagerPartitionTracker clusterPartitionTracker;
+    protected final ResourceManagerPartitionTracker clusterPartitionTracker;
 
-    private final ClusterInformation clusterInformation;
+    protected final ClusterInformation clusterInformation;
 
     protected final ResourceManagerMetricGroup resourceManagerMetricGroup;
 
     protected final Executor ioExecutor;
 
-    private final CompletableFuture<Void> startedFuture;
+    protected final CompletableFuture<Void> startedFuture;
 
     /** The heartbeat manager with task managers. */
-    private HeartbeatManager<TaskExecutorHeartbeatPayload, Void> taskManagerHeartbeatManager;
+    protected HeartbeatManager<TaskExecutorHeartbeatPayload, Void> taskManagerHeartbeatManager;
 
     /** The heartbeat manager with job managers. */
-    private HeartbeatManager<Void, Void> jobManagerHeartbeatManager;
+    protected HeartbeatManager<Void, Void> jobManagerHeartbeatManager;
 
-    private final DelegationTokenManager delegationTokenManager;
+    protected final DelegationTokenManager delegationTokenManager;
 
     protected final BlocklistHandler blocklistHandler;
 
@@ -573,6 +573,7 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
     @Override
     public CompletableFuture<Acknowledge> declareRequiredResources(
             JobMasterId jobMasterId, ResourceRequirements resourceRequirements, Duration timeout) {
+        System.out.println("ResourceManager.declareRequiredResources " + jobMasterId + " " + resourceRequirements);
         final JobID jobId = resourceRequirements.getJobId();
         try (MdcCloseable ignored = MdcUtils.withContext(MdcUtils.asContextData(jobId))) {
             final JobManagerRegistration jobManagerRegistration =
@@ -580,10 +581,12 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
 
             if (null != jobManagerRegistration) {
                 if (Objects.equals(jobMasterId, jobManagerRegistration.getJobMasterId())) {
+                    System.out.println("ResourceManager.declareRequiredResources p1 " + jobMasterId + " " + resourceRequirements);
                     return getReadyToServeFuture()
                             .thenApply(
                                     acknowledge -> {
                                         validateRunsInMainThread();
+                                        System.out.println("Process resource requirements " + resourceRequirements);
                                         slotManager.processResourceRequirements(
                                                 resourceRequirements);
                                         return null;
@@ -1007,6 +1010,7 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
             JobManagerRegistration jobManagerRegistration =
                     new JobManagerRegistration(jobId, jobManagerResourceId, jobMasterGateway);
             jobManagerRegistrations.put(jobId, jobManagerRegistration);
+            System.out.println("jobManagerRegistrations: " + jobManagerRegistrations);
             jmResourceIdRegistrations.put(jobManagerResourceId, jobManagerRegistration);
             blocklistHandler.registerBlocklistListener(jobMasterGateway);
         }

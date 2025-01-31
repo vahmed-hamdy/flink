@@ -19,12 +19,14 @@
 package org.apache.flink.runtime.resourcemanager.slotmanager;
 
 import org.apache.flink.api.common.JobID;
+import org.apache.flink.runtime.resourcemanager.Unexplored;
 import org.apache.flink.runtime.slots.ResourceRequirement;
 
 import java.util.Collection;
 
 /** Listener for resource events of {@link SlotManager}. */
 @FunctionalInterface
+@Unexplored
 public interface ResourceEventListener {
     /**
      * @param jobId job for which not enough resources are available

@@ -18,16 +18,21 @@
 
 package org.apache.flink.runtime.quotamanager;
 
+import org.apache.flink.api.common.JobID;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-public class StaticQuotaProxyClient implements QuotaProxyClient<ResourceQuota> {
+public class InmemoryQuotaClient implements QuotaProxyClient<ResourceQuota> {
 
     private final HashMap<QuotaUserId, ResourceQuota> userQuotas;
 
-    public StaticQuotaProxyClient(Map<QuotaUserId, ResourceQuota> quota) {
+    private final Map<JobID, QuotaUserId> userJobs;
+
+    public InmemoryQuotaClient(Map<QuotaUserId, ResourceQuota> quota) {
         this.userQuotas = new HashMap<>(quota);
+        this.userJobs = new HashMap<>();
     }
 
     @Override
@@ -53,5 +58,11 @@ public class StaticQuotaProxyClient implements QuotaProxyClient<ResourceQuota> {
     public CompletableFuture<Void> removeQuota(QuotaUserId userId) {
         userQuotas.remove(userId);
         return CompletableFuture.completedFuture(null);
+    }
+
+    // UNUSED
+    @Override
+    public CompletableFuture<QuotaUserId> getQuotaUserForToken(String token) {
+        return CompletableFuture.completedFuture(userJobs.get(JobID.fromHexString(token)));
     }
 }

@@ -154,6 +154,7 @@ public class TaskExecutorToResourceManagerConnection
                 ResourceManagerId fencingToken,
                 long timeoutMillis)
                 throws Exception {
+            System.out.println("[TaskExecutorToResourceManagerConnection] Registering Task Executor");
 
             Duration timeout = Duration.ofMillis(timeoutMillis);
             return resourceManager.registerTaskExecutor(taskExecutorRegistration, timeout);

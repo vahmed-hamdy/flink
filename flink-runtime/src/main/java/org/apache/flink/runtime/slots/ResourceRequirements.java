@@ -18,6 +18,7 @@
 package org.apache.flink.runtime.slots;
 
 import org.apache.flink.api.common.JobID;
+import org.apache.flink.runtime.resourcemanager.Unexplored;
 import org.apache.flink.util.Preconditions;
 
 import java.io.Serializable;
@@ -29,6 +30,7 @@ import java.util.Objects;
  * Represents the total resource requirements for a job, and the information required to connect to
  * the corresponding job master.
  */
+@Unexplored(comment = "Let's explore this class")
 public class ResourceRequirements implements Serializable {
 
     private static final long serialVersionUID = 1L;

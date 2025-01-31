@@ -269,11 +269,7 @@ public class ResourceProfile implements Serializable {
             return true;
         }
 
-        if (required.equals(UNKNOWN)) {
-            return true;
-        }
-
-        return false;
+        return required.equals(UNKNOWN);
     }
 
     /**

@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 /** Contains the base information about a {@link TaskExecutor} and its allocated slots. */
+@Unexplored
 public class TaskManagerInfoWithSlots implements Serializable {
 
     private static final long serialVersionUID = 1L;

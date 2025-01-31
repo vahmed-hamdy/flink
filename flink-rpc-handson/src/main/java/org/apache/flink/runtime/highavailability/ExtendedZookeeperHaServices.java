@@ -24,7 +24,6 @@ import org.apache.flink.runtime.blob.BlobUtils;
 import org.apache.flink.runtime.highavailability.zookeeper.CuratorFrameworkWithUnhandledErrorListener;
 import org.apache.flink.runtime.highavailability.zookeeper.ZooKeeperLeaderElectionHaServices;
 import org.apache.flink.runtime.leaderelection.LeaderElection;
-import org.apache.flink.runtime.leaderelection.LeaderElectionService;
 import org.apache.flink.runtime.leaderretrieval.LeaderRetrievalService;
 import org.apache.flink.runtime.util.ZooKeeperUtils;
 
@@ -33,7 +32,7 @@ import java.util.concurrent.Executor;
 public class ExtendedZookeeperHaServices extends ZooKeeperLeaderElectionHaServices {
 
     private static final String SERVER_NODE = "server";
-    public ExtendedZookeeperHaServices(
+    private ExtendedZookeeperHaServices(
             CuratorFrameworkWithUnhandledErrorListener curatorFrameworkWrapper,
             Configuration configuration,
             Executor executor,
@@ -50,7 +49,7 @@ public class ExtendedZookeeperHaServices extends ZooKeeperLeaderElectionHaServic
     }
 
 
-    public static ExtendedZookeeperHaServices create(Configuration configuration,Executor executor) throws Exception {
+    public static ExtendedZookeeperHaServices create(Configuration configuration, Executor executor) throws Exception {
         BlobStoreService blobStoreService = BlobUtils.createBlobStoreFromConfig(configuration);
 
         final CuratorFrameworkWithUnhandledErrorListener curatorFrameworkWrapper =

@@ -1523,11 +1523,7 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
                         JobMasterRegistrationSuccess,
                         RegistrationResponse.Rejection>
                 generateRegistration() {
-            return new RetryingRegistration<
-                    ResourceManagerId,
-                    ResourceManagerGateway,
-                    JobMasterRegistrationSuccess,
-                    RegistrationResponse.Rejection>(
+            return new RetryingRegistration<>(
                     log,
                     getRpcService(),
                     "ResourceManager",

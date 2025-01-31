@@ -18,6 +18,8 @@
 
 package org.apache.flink.runtime.taskexecutor;
 
+import org.apache.flink.runtime.resourcemanager.Unexplored;
+
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
@@ -30,6 +32,7 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
  * A report about the current status of all slots of the TaskExecutor, describing which slots are
  * available and allocated, and what jobs (JobManagers) the allocated slots have been allocated to.
  */
+@Unexplored(comment = "Let's explore this class")
 public class SlotReport implements Serializable, Iterable<SlotStatus> {
 
     private static final long serialVersionUID = -3150175198722481689L;

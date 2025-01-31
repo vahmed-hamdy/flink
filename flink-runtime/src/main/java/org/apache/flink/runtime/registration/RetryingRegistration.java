@@ -159,6 +159,7 @@ public abstract class RetryingRegistration<
             CompletableFuture<Void> rpcGatewayAcceptFuture =
                     rpcGatewayFuture.thenAcceptAsync(
                             (G rpcGateway) -> {
+                                System.out.println("Resolved " + targetName + " address, beginning registration");
                                 log.info("Resolved {} address, beginning registration", targetName);
                                 register(
                                         rpcGateway,
@@ -174,6 +175,15 @@ public abstract class RetryingRegistration<
                         if (failure != null && !canceled) {
                             final Throwable strippedFailure =
                                     ExceptionUtils.stripCompletionException(failure);
+                            System.out.println(
+                                    "Could not resolve "
+                                            + targetName
+                                            + " address "
+                                            + targetAddress
+                                            + ", retrying in "
+                                            + retryingRegistrationConfiguration.getErrorDelayMillis()
+                                            + " ms: "
+                                            + strippedFailure.getMessage());
                             if (log.isDebugEnabled()) {
                                 log.debug(
                                         "Could not resolve {} address {}, retrying in {} ms.",
@@ -189,13 +199,18 @@ public abstract class RetryingRegistration<
                                         retryingRegistrationConfiguration.getErrorDelayMillis(),
                                         strippedFailure.getMessage());
                             }
+                            System.out.println("[FAILRETRY]");
 
                             startRegistrationLater(
                                     retryingRegistrationConfiguration.getErrorDelayMillis());
+                        } else {
+                            System.out.println("We are now Registered");
                         }
                     },
-                    rpcService.getScheduledExecutor());
+                    rpcService.getScheduledExecutor())
+                    .join();
         } catch (Throwable t) {
+            System.out.println("Error while starting registration: " + t.getMessage());
             completionFuture.completeExceptionally(t);
             cancel();
         }
@@ -218,6 +233,14 @@ public abstract class RetryingRegistration<
                     targetName,
                     attempt,
                     timeoutMillis);
+            System.out.println(
+                    "Registration at "
+                            + targetName
+                            + " attempt "
+                            + attempt
+                            + " (timeout="
+                            + timeoutMillis
+                            + "ms)");
             CompletableFuture<RegistrationResponse> registrationFuture =
                     invokeRegistration(gateway, fencingToken, timeoutMillis);
 
@@ -231,6 +254,9 @@ public abstract class RetryingRegistration<
                                                 "Registration with {} at {} was successful.",
                                                 targetName,
                                                 targetAddress);
+                                        System.out.println(
+                                                "Successful registration at resource manager "
+                                                        + targetAddress);
                                         S success = (S) result;
                                         completionFuture.complete(
                                                 RetryingRegistrationResult.success(
@@ -240,6 +266,8 @@ public abstract class RetryingRegistration<
                                                 "Registration with {} at {} was rejected.",
                                                 targetName,
                                                 targetAddress);
+                                        System.out.println(
+                                                "Registration with " + targetName + " at " + targetAddress + " was rejected.");
                                         R rejection = (R) result;
                                         completionFuture.complete(
                                                 RetryingRegistrationResult.rejection(rejection));
@@ -252,11 +280,21 @@ public abstract class RetryingRegistration<
                                                     "Registration failure at {} occurred.",
                                                     targetName,
                                                     failure.getReason());
+                                            System.out.println(
+                                                    "Registration failure at " + targetName + " occurred.");
                                         } else {
                                             log.error(
                                                     "Received unknown response to registration attempt: {}",
                                                     result);
+                                            System.out.println(
+                                                    "Received unknown response to registration attempt: "
+                                                            + result);
                                         }
+                                        System.out.println(
+                                                "Pausing and re-attempting registration in "
+                                                        + retryingRegistrationConfiguration
+                                                                .getRefusedDelayMillis()
+                                                        + " ms for failure " + result.toString());
 
                                         log.info(
                                                 "Pausing and re-attempting registration in {} ms",
@@ -299,6 +337,11 @@ public abstract class RetryingRegistration<
                                                 2 * timeoutMillis,
                                                 retryingRegistrationConfiguration
                                                         .getMaxRegistrationTimeoutMillis());
+                                System.out.println(
+                                        "Pausing and re-attempting registration in "
+                                                + retryingRegistrationConfiguration
+                                                        .getInitialRegistrationTimeoutMillis()
+                                                + " ms");
                                 register(gateway, attempt + 1, newTimeoutMillis);
                             } else {
                                 // a serious failure occurred. we still should not give up, but keep
@@ -310,6 +353,10 @@ public abstract class RetryingRegistration<
                                 log.info(
                                         "Pausing and re-attempting registration in {} ms",
                                         retryingRegistrationConfiguration.getErrorDelayMillis());
+                                System.out.println(
+                                        "Pausing and re-attempting registration in "
+                                                + retryingRegistrationConfiguration.getErrorDelayMillis()
+                                                + " ms for failure " + failure.getMessage());
 
                                 registerLater(
                                         gateway,

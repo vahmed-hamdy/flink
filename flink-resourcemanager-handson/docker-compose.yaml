@@ -1,0 +1,73 @@
+version: '3.8'
+networks:
+  rm-network:
+    driver: bridge
+
+services:
+#  zookeeper:
+#    image: zookeeper:3.6.3
+#    ports:
+#      - "2181:2181"
+#    networks:
+#      - rm-network
+
+  resourcemanager:
+    image: flink-resourcemanager-handson:latest
+    ports:
+      - "6123:6123"
+      - "50051:50051"
+    environment:
+      - PROGRAM_NAME=resourcemanager
+      - RESOURCE_MANAGER_URL=resourcemanager
+      - RESOURCE_MANAGER_PORT=6123
+      - TASK_EXECUTOR_URL=taskexecutor
+      - TASK_EXECUTOR_PORT=6124
+      - ZOOKEEPER_ADDRESS=zookeeper:2181
+      - ZOOKEEPER_ENABLE=false
+      - DEBUG_PORT=50051
+    networks:
+      - rm-network
+    volumes:
+      - /Users/ahmedhamdy/flink/flink/flink-resourcemanager-handson/src/opt:/tmp
+
+  taskexecutor:
+    image: flink-resourcemanager-handson:latest
+    ports:
+      - "6124:6124"
+      - "50052:50052"
+    environment:
+      - PROGRAM_NAME=taskexecutor
+      - RESOURCE_MANAGER_URL=resourcemanager
+      - RESOURCE_MANAGER_PORT=6123
+      - TASK_EXECUTOR_URL=taskexecutor
+      - TASK_EXECUTOR_PORT=6124
+      - ZOOKEEPER_ADDRESS=zookeeper:2181
+      - ZOOKEEPER_ENABLE=false
+      - DEBUG_PORT=50052
+    networks:
+        - rm-network
+    volumes:
+      - /Users/ahmedhamdy/flink/flink/flink-resourcemanager-handson/src/opt:/tmp
+    depends_on:
+      - resourcemanager
+#
+#  taskexecutor2:
+#    image: flink-resourcemanager-handson:latest
+#    ports:
+#      - "6125:6125"
+#      - "50053:50053"
+#    environment:
+#      - PROGRAM_NAME=taskexecutor
+#      - RESOURCE_MANAGER_URL=resourcemanager
+#      - RESOURCE_MANAGER_PORT=6123
+#      - TASK_EXECUTOR_URL=taskexecutor2
+#      - TASK_EXECUTOR_PORT=6125
+#      - ZOOKEEPER_ADDRESS=zookeeper:2181
+#      - ZOOKEEPER_ENABLE=false
+#      - DEBUG_PORT=50053
+#    networks:
+#      - rm-network
+#    volumes:
+#      - /Users/ahmedhamdy/flink/flink/flink-resourcemanager-handson/src/opt:/tmp
+#    depends_on:
+#      - resourcemanager

@@ -80,6 +80,11 @@ public class TestingRpcService implements RpcService {
         this.registeredConnections = new ConcurrentHashMap<>();
     }
 
+    public TestingRpcService(RpcService backingRpcService) {
+        this.backingRpcService = checkNotNull(backingRpcService);
+        this.registeredConnections = new ConcurrentHashMap<>();
+    }
+
     // ------------------------------------------------------------------------
 
     @Override

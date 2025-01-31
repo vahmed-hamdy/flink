@@ -17,11 +17,13 @@
 
 package org.apache.flink.runtime.taskexecutor;
 
+import org.apache.flink.runtime.resourcemanager.Unexplored;
 import org.apache.flink.runtime.taskexecutor.partition.ClusterPartitionReport;
 
 import java.io.Serializable;
 
 /** Payload for heartbeats sent from the TaskExecutor to the ResourceManager. */
+@Unexplored
 public class TaskExecutorHeartbeatPayload implements Serializable {
 
     private static final long serialVersionUID = -4556838854992435612L;

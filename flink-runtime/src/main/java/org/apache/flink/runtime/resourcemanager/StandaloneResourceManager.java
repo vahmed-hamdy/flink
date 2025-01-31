@@ -52,7 +52,7 @@ import java.util.concurrent.TimeUnit;
 public class StandaloneResourceManager extends ResourceManager<ResourceID> {
 
     /** The duration of the startup period. A duration of zero means there is no startup period. */
-    private final Duration startupPeriodTime;
+    protected final Duration startupPeriodTime;
 
     public StandaloneResourceManager(
             RpcService rpcService,

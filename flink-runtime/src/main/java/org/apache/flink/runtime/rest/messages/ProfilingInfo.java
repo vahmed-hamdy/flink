@@ -18,12 +18,15 @@
 
 package org.apache.flink.runtime.rest.messages;
 
+import org.apache.flink.runtime.resourcemanager.Unexplored;
+
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.annotation.JsonCreator;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.Serializable;
 
 /** Contains information of a Profiling Instance. */
+@Unexplored
 public class ProfilingInfo implements ResponseBody, Serializable {
     private static final long serialVersionUID = 1L;
     public static final String FIELD_NAME_STATUS = "status";
