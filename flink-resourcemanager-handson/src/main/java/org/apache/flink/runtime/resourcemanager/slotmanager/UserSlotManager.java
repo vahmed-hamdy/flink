@@ -30,15 +30,21 @@ import org.apache.flink.runtime.rest.messages.taskmanager.SlotInfo;
 import org.apache.flink.runtime.slots.ResourceRequirements;
 import org.apache.flink.runtime.taskexecutor.SlotReport;
 import org.apache.flink.runtime.user.UserID;
+import org.apache.flink.util.Preconditions;
 
 import java.io.Closeable;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
+import java.util.stream.Collectors;
 
 public class UserSlotManager implements UserQuotaSlotManager{
     boolean running = false;
-
+    Map<UserID, ResourceRequirements> userQuotas = new ConcurrentHashMap<>();
 
     private final TaskManagerTracker taskManagerTracker;
     private final ResourceTracker resourceTracker;
@@ -71,7 +77,11 @@ public class UserSlotManager implements UserQuotaSlotManager{
      */
     @Override
     public void updateUserQuota(UserID userID, ResourceRequirements resourceRequirements) {
-
+        System.out.println("Updating user quota");
+        Preconditions.checkNotNull(userID);
+        Preconditions.checkNotNull(resourceRequirements);
+        Preconditions.checkNotNull(userQuotas.get(userID));
+        userQuotas.put(userID, resourceRequirements);
     }
 
     /**
@@ -81,7 +91,7 @@ public class UserSlotManager implements UserQuotaSlotManager{
      */
     @Override
     public ResourceRequirements getUserQuota(UserID userID) {
-        return null;
+        return userQuotas.get(userID);
     }
 
     /**
@@ -89,7 +99,8 @@ public class UserSlotManager implements UserQuotaSlotManager{
      */
     @Override
     public void unregisterUser(UserID userID) {
-
+        // TODO: Free all slots of the user
+        userQuotas.remove(userID);
     }
 
     /**
@@ -97,7 +108,7 @@ public class UserSlotManager implements UserQuotaSlotManager{
      */
     @Override
     public List<UserID> getRegisteredUsers() {
-        return null;
+        return new ArrayList<>(userQuotas.keySet());
     }
 
     /**
@@ -105,7 +116,7 @@ public class UserSlotManager implements UserQuotaSlotManager{
      */
     @Override
     public int getNumberRegisteredSlots() {
-        return 0;
+        return taskManagerTracker.getNumberRegisteredSlots();
     }
 
     /**
@@ -115,7 +126,7 @@ public class UserSlotManager implements UserQuotaSlotManager{
      */
     @Override
     public int getNumberRegisteredSlotsOf(InstanceID instanceId) {
-        return 0;
+        return taskManagerTracker.getNumberRegisteredSlotsOf(instanceId);
     }
 
     /**
@@ -123,7 +134,7 @@ public class UserSlotManager implements UserQuotaSlotManager{
      */
     @Override
     public int getNumberFreeSlots() {
-        return 0;
+        return taskManagerTracker.getNumberFreeSlots();
     }
 
     /**
@@ -133,7 +144,7 @@ public class UserSlotManager implements UserQuotaSlotManager{
      */
     @Override
     public int getNumberFreeSlotsOf(InstanceID instanceId) {
-        return 0;
+        return taskManagerTracker.getNumberFreeSlotsOf(instanceId);
     }
 
     /**
@@ -141,7 +152,7 @@ public class UserSlotManager implements UserQuotaSlotManager{
      */
     @Override
     public ResourceProfile getRegisteredResource() {
-        return null;
+        return taskManagerTracker.getRegisteredResource();
     }
 
     /**
@@ -151,7 +162,7 @@ public class UserSlotManager implements UserQuotaSlotManager{
      */
     @Override
     public ResourceProfile getRegisteredResourceOf(InstanceID instanceID) {
-        return null;
+        return taskManagerTracker.getRegisteredResourceOf(instanceID);
     }
 
     /**
@@ -159,7 +170,7 @@ public class UserSlotManager implements UserQuotaSlotManager{
      */
     @Override
     public ResourceProfile getFreeResource() {
-        return null;
+        return taskManagerTracker.getFreeResource();
     }
 
     /**
@@ -169,7 +180,7 @@ public class UserSlotManager implements UserQuotaSlotManager{
      */
     @Override
     public ResourceProfile getFreeResourceOf(InstanceID instanceID) {
-        return null;
+        return taskManagerTracker.getFreeResourceOf(instanceID);
     }
 
     /**
@@ -179,7 +190,13 @@ public class UserSlotManager implements UserQuotaSlotManager{
      */
     @Override
     public Collection<SlotInfo> getAllocatedSlotsOf(InstanceID instanceID) {
-        return null;
+        return taskManagerTracker.getRegisteredTaskManager(instanceID)
+                .map(TaskManagerInfo::getAllocatedSlots)
+                .map(Map::values)
+                .orElse(Collections.emptyList())
+                .stream()
+                .map(slot -> new SlotInfo(slot.getJobId(), slot.getResourceProfile()))
+                .collect(Collectors.toList());
     }
 
     /**
