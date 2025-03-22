@@ -18,21 +18,19 @@
 
 package org.apache.flink.runtime.resourcemanager.slotmanager;
 
-import org.apache.flink.runtime.resourcemanager.slotmanager.SlotManager;
-import org.apache.flink.runtime.slots.ResourceRequirements;
+import org.apache.flink.runtime.resourcemanager.slots.ResourceQuota;
 import org.apache.flink.runtime.user.UserID;
 
 import java.util.List;
 
 public interface UserQuotaSlotManager extends SlotManager {
 
-        void registerNewUser(UserID userID);
 
-        void updateUserQuota(UserID userID, ResourceRequirements resourceRequirements);
+        void updateUserQuota(UserID userID, ResourceQuota resourceRequirements);
 
-        ResourceRequirements getUserQuota(UserID userID);
+        ResourceQuota getUserQuota(UserID userID);
 
-        void unregisterUser(UserID userID);
+        void clearUserSlots(UserID userID);
 
         List<UserID> getRegisteredUsers();
 }

@@ -16,19 +16,21 @@
  * limitations under the License.
  */
 
-package org.apache.flink.runtime.quotamanager;
+package org.apache.flink.runtime.resourcemanager.slotmanager;
 
-public class QuotaExceededException extends RuntimeException {
+import org.apache.flink.runtime.instance.InstanceID;
+import org.apache.flink.runtime.user.UserID;
 
-    private static final long serialVersionUID = 1L;
+import java.util.Optional;
 
-    public QuotaExceededException(QuotaUserId message) {
-        super("Quota exceeded for user " + message);
-    }
+public interface UserTaskManagerResourceInfoProvider extends TaskManagerResourceInfoProvider {
 
+    boolean isSharedTaskManager(InstanceID instanceId);
 
-    public QuotaExceededException(QuotaUserId message, ResourceQuota quota, int numRequestedSlots) {
-        super("Quota exceeded for user " + message + ". Quota: " + quota.getNumSlots() + " slots, " +
-                "requested: " + numRequestedSlots + " slots.");
-    }
+    Optional<UserID> getSpecificTMUserID(InstanceID instanceId);
+
+    boolean isSharedPendingTaskManager(PendingTaskManagerId instanceId);
+
+    Optional<UserID> getSpecificPendingTMUserID(PendingTaskManagerId instanceId);
+
 }

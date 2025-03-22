@@ -16,20 +16,35 @@
  * limitations under the License.
  */
 
-package org.apache.flink.runtime.quotamanager;
+package org.apache.flink.runtime.resourcemanager.slotmanager;
 
-import java.util.concurrent.CompletableFuture;
 
-public interface QuotaProxyClient<QuotaT extends ResourceQuota> {
-    void start();
-    void stop();
+import org.apache.flink.api.common.JobID;
+import org.apache.flink.runtime.resourcemanager.slots.ResourceQuota;
+import org.apache.flink.runtime.slots.ResourceRequirements;
+import org.apache.flink.runtime.util.ResourceCounter;
 
-    CompletableFuture<QuotaT> getQuotaForUser(QuotaUserId userId);
+/**
+ * The {@link UserSlotHandler} is responsible for managing the slots of a user.
+ */
+public class UserSlotHandler {
+    private ResourceQuota quota;
 
-    CompletableFuture<Void> updateQuota(QuotaUserId userId, QuotaT quota);
+    public void updateUserQuota(ResourceQuota resourceQuota) {
 
-    CompletableFuture<Void> removeQuota(QuotaUserId userId);
+    }
 
-    CompletableFuture<QuotaUserId> getQuotaUserForToken(String token);
+    public void clear() {
+
+    }
+
+    public void clearResourceRequirements(JobID jobID) {
+
+    }
+
+    public ResourceQuota getQuota() {
+        return quota;
+    }
+
 
 }

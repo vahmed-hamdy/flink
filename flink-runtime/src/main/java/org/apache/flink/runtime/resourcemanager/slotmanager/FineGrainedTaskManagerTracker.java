@@ -44,10 +44,10 @@ public class FineGrainedTaskManagerTracker implements TaskManagerTracker {
     private static final Logger LOG = LoggerFactory.getLogger(FineGrainedTaskManagerTracker.class);
 
     /** Map for allocated and pending slots. */
-    private final Map<AllocationID, FineGrainedTaskManagerSlot> slots;
+    protected final Map<AllocationID, FineGrainedTaskManagerSlot> slots;
 
     /** All currently registered task managers. */
-    private final Map<InstanceID, FineGrainedTaskManagerRegistration> taskManagerRegistrations;
+    protected final Map<InstanceID, FineGrainedTaskManagerRegistration> taskManagerRegistrations;
 
     /** All unwanted task managers. */
     private final Map<InstanceID, WorkerResourceSpec> unWantedTaskManagers;
@@ -225,15 +225,16 @@ public class FineGrainedTaskManagerTracker implements TaskManagerTracker {
         }
     }
 
-    private void freeSlot(InstanceID instanceId, AllocationID allocationId) {
+    protected boolean freeSlot(InstanceID instanceId, AllocationID allocationId) {
         final FineGrainedTaskManagerRegistration taskManager =
                 Preconditions.checkNotNull(taskManagerRegistrations.get(instanceId));
         Preconditions.checkNotNull(slots.remove(allocationId));
         LOG.debug("Free allocated slot with allocationId {}.", allocationId);
         taskManager.freeSlot(allocationId);
+        return false;
     }
 
-    private void addAllocatedSlot(
+    protected void addAllocatedSlot(
             AllocationID allocationId,
             JobID jobId,
             InstanceID instanceId,
@@ -259,7 +260,7 @@ public class FineGrainedTaskManagerTracker implements TaskManagerTracker {
         }
     }
 
-    private void addPendingSlot(
+    protected void addPendingSlot(
             AllocationID allocationId,
             JobID jobId,
             InstanceID instanceId,

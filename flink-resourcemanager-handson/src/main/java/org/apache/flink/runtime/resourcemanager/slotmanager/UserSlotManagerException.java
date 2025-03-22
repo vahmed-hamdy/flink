@@ -16,23 +16,15 @@
  * limitations under the License.
  */
 
-package org.apache.flink.runtime.quotamanager;
+package org.apache.flink.runtime.resourcemanager.slotmanager;
 
-import org.apache.flink.util.AbstractID;
+public class UserSlotManagerException extends RuntimeException {
 
-import java.util.UUID;
-
-public class QuotaUserId extends AbstractID {
-
-    public QuotaUserId() {
-        super();
+    public UserSlotManagerException(String message) {
+        super(message);
     }
 
-    public QuotaUserId(UUID uuid) {
-        super(uuid.getLeastSignificantBits(), uuid.getMostSignificantBits());
-    }
-
-    public static QuotaUserId fromString(String id) {
-        return new QuotaUserId(UUID.fromString(id));
+    public UserSlotManagerException(String message, Throwable cause) {
+        super(message, cause);
     }
 }

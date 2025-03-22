@@ -26,62 +26,100 @@ import org.apache.flink.runtime.clusterframework.types.SlotID;
 import org.apache.flink.runtime.instance.InstanceID;
 import org.apache.flink.runtime.resourcemanager.ResourceManagerId;
 import org.apache.flink.runtime.resourcemanager.registration.TaskExecutorConnection;
+import org.apache.flink.runtime.resourcemanager.slots.ResourceQuota;
 import org.apache.flink.runtime.rest.messages.taskmanager.SlotInfo;
+import org.apache.flink.runtime.slots.ResourceRequirement;
 import org.apache.flink.runtime.slots.ResourceRequirements;
 import org.apache.flink.runtime.taskexecutor.SlotReport;
 import org.apache.flink.runtime.user.UserID;
+import org.apache.flink.runtime.util.ResourceCounter;
 import org.apache.flink.util.Preconditions;
 
+import org.apache.flink.util.concurrent.ScheduledExecutor;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
+
 import java.io.Closeable;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class UserSlotManager implements UserQuotaSlotManager{
-    boolean running = false;
-    Map<UserID, ResourceRequirements> userQuotas = new ConcurrentHashMap<>();
-
-    private final TaskManagerTracker taskManagerTracker;
+    private static final Logger LOG = LoggerFactory.getLogger(UserSlotManager.class);
+    private final UserSpecificTaskmanagerTracker taskManagerTracker;
     private final ResourceTracker resourceTracker;
     private final ResourceAllocationStrategy resourceAllocationStrategy;
 
+    @Nullable private ResourceAllocator resourceAllocator;
+
     private final SlotStatusSyncer slotStatusSyncer;
 
+    private final ConcurrentHashMap<JobID, UserID> jobToUserMap = new ConcurrentHashMap<>();
+
+    private final ConcurrentHashMap<UserID, UserSlotHandler> slotHandlers = new ConcurrentHashMap<>();
+
+    private final Duration requirementsCheckDelay;
+
+    private final Duration declareNeededResourceDelay;
+
+    private final ScheduledExecutor scheduledExecutor;
+
+    @Nullable private Executor mainThreadExecutor;
+
+
+
+
+    @Nullable
+    private ScheduledFuture<?> clusterReconciliationCheck;
+
+    @Nullable private CompletableFuture<Void> requirementsCheckFuture;
+
+    @Nullable private CompletableFuture<Void> declareNeededResourceFuture;
+
+    boolean running = false;
+
     public UserSlotManager(
-            TaskManagerTracker taskManagerTracker,
+            UserSpecificTaskmanagerTracker taskManagerTracker,
             ResourceTracker resourceTracker,
             ResourceAllocationStrategy resourceAllocationStrategy,
-            SlotStatusSyncer slotStatusSyncer) {
+            SlotStatusSyncer slotStatusSyncer, Duration requirementsCheckDelay,
+            Duration declareNeededResourceDelay, ScheduledExecutor scheduledExecutor) {
         this.taskManagerTracker = taskManagerTracker;
         this.resourceTracker = resourceTracker;
         this.resourceAllocationStrategy = resourceAllocationStrategy;
         this.slotStatusSyncer = slotStatusSyncer;
+        this.requirementsCheckDelay = requirementsCheckDelay;
+        this.declareNeededResourceDelay = declareNeededResourceDelay;
+        this.scheduledExecutor = scheduledExecutor;
     }
+
 
     /**
      * @param userID
+     * @param resourceQuota
      */
     @Override
-    public void registerNewUser(UserID userID) {
-
-    }
-
-    /**
-     * @param userID
-     * @param resourceRequirements
-     */
-    @Override
-    public void updateUserQuota(UserID userID, ResourceRequirements resourceRequirements) {
+    public void updateUserQuota(UserID userID, ResourceQuota resourceQuota) {
         System.out.println("Updating user quota");
         Preconditions.checkNotNull(userID);
-        Preconditions.checkNotNull(resourceRequirements);
-        Preconditions.checkNotNull(userQuotas.get(userID));
-        userQuotas.put(userID, resourceRequirements);
+        Preconditions.checkNotNull(resourceQuota);
+        Preconditions.checkNotNull(slotHandlers.get(userID));
+        slotHandlers.get(userID).updateUserQuota(resourceQuota);
     }
 
     /**
@@ -90,17 +128,18 @@ public class UserSlotManager implements UserQuotaSlotManager{
      * @return
      */
     @Override
-    public ResourceRequirements getUserQuota(UserID userID) {
-        return userQuotas.get(userID);
+    public ResourceQuota getUserQuota(UserID userID) {
+        return Optional.ofNullable(slotHandlers.get(userID))
+                .map(UserSlotHandler::getQuota)
+                .orElse(ResourceQuota.empty(userID));
     }
 
     /**
      * @param userID
      */
     @Override
-    public void unregisterUser(UserID userID) {
-        // TODO: Free all slots of the user
-        userQuotas.remove(userID);
+    public void clearUserSlots(UserID userID) {
+        Optional.ofNullable(slotHandlers.get(userID)).ifPresent(UserSlotHandler::clear);
     }
 
     /**
@@ -108,7 +147,21 @@ public class UserSlotManager implements UserQuotaSlotManager{
      */
     @Override
     public List<UserID> getRegisteredUsers() {
-        return new ArrayList<>(userQuotas.keySet());
+        return new ArrayList<>(slotHandlers.keySet());
+    }
+
+
+    /**
+     * @param failUnfulfillableRequest
+     */
+    @Override
+    public void setFailUnfulfillableRequest(boolean failUnfulfillableRequest) {
+        // TODO: Implement this method ya Ahmed
+    }
+
+    @Override
+    public void triggerResourceRequirementsCheck() {
+        checkResourceRequirements();
     }
 
     /**
@@ -324,22 +377,7 @@ public class UserSlotManager implements UserQuotaSlotManager{
 
     }
 
-    /**
-     * @param failUnfulfillableRequest
-     */
-    @Override
-    public void setFailUnfulfillableRequest(boolean failUnfulfillableRequest) {
 
-    }
-
-    /**
-     * Trigger the resource requirement check. This method will be called when some slot statuses
-     * changed.
-     */
-    @Override
-    public void triggerResourceRequirementsCheck() {
-
-    }
 
     /**
      * Closes this resource, relinquishing any underlying resources.
@@ -390,4 +428,127 @@ public class UserSlotManager implements UserQuotaSlotManager{
     public void close() throws Exception {
 
     }
+
+
+    // ---------------------------------------------------------------------------------------------
+    // Requirement matching
+    // ---------------------------------------------------------------------------------------------
+
+
+    /**
+     * DO NOT call this method directly. Use {@link #checkResourceRequirements()} instead.
+     */
+    private void checkResourceRequirements() {
+//        if (!running) {
+//            System.out.println("Not running ya 3am");
+//            return;
+//        }
+//
+//        Map<JobID, Collection<ResourceRequirement>> missingResources =
+//                resourceTracker.getMissingResources();
+//        if (missingResources.isEmpty()) {
+//            if (resourceAllocator.isSupported()
+//                    && !taskManagerTracker.getPendingTaskManagers().isEmpty()) {
+//                taskManagerTracker.replaceAllPendingAllocations(Collections.emptyMap());
+//                checkResourcesNeedReconcile();
+//                declareNeededResourcesWithDelay();
+//            }
+//            return;
+//        }
+//
+//
+//        missingResources =
+//                missingResources.entrySet().stream()
+//                        .collect(
+//                                Collectors.toMap(
+//                                        Map.Entry::getKey, e -> new ArrayList<>(e.getValue())));
+//
+//        final ResourceAllocationResult result =
+//                resourceAllocationStrategy.tryFulfillRequirements(
+//                        missingResources, taskManagerTracker, (r) -> false);
+//
+//        // Allocate slots according to the result
+//        allocateSlotsAccordingTo(result.getAllocationsOnRegisteredResources());
+//
+//        final Set<PendingTaskManagerId> failAllocations;
+//        if (resourceAllocator.isSupported()) {
+//            // Allocate task managers according to the result
+//            failAllocations =
+//                    allocateTaskManagersAccordingTo(result.getPendingTaskManagersToAllocate());
+//
+//            // Record slot allocation of pending task managers
+//            final Map<PendingTaskManagerId, Map<JobID, ResourceCounter>>
+//                    pendingResourceAllocationResult =
+//                    new HashMap<>(result.getAllocationsOnPendingResources());
+//            pendingResourceAllocationResult.keySet().removeAll(failAllocations);
+//            taskManagerTracker.replaceAllPendingAllocations(pendingResourceAllocationResult);
+//        } else {
+//            failAllocations =
+//                    result.getPendingTaskManagersToAllocate().stream()
+//                            .map(PendingTaskManager::getPendingTaskManagerId)
+//                            .collect(Collectors.toSet());
+//        }
+//
+//        unfulfillableJobs.clear();
+//        unfulfillableJobs.addAll(result.getUnfulfillableJobs());
+//        for (PendingTaskManagerId pendingTaskManagerId : failAllocations) {
+//            unfulfillableJobs.addAll(
+//                    result.getAllocationsOnPendingResources().get(pendingTaskManagerId).keySet());
+//        }
+//        // Notify jobs that can not be fulfilled
+//        if (sendNotEnoughResourceNotifications) {
+//            for (JobID jobId : unfulfillableJobs) {
+//                LOG.warn("Could not fulfill resource requirements of job {}.", jobId);
+//                resourceEventListener.notEnoughResourceAvailable(
+//                        jobId, resourceTracker.getAcquiredResources(jobId));
+//            }
+//        }
+//
+//        if (resourceAllocator.isSupported()) {
+//            checkResourcesNeedReconcile();
+//            declareNeededResourcesWithDelay();
+//        }
+    }
+
+    private boolean checkResourcesNeedReconcile() {
+//        ResourceReconcileResult reconcileResult =
+//                resourceAllocationStrategy.tryReconcileClusterResources(taskManagerTracker);
+//
+//        reconcileResult.getPendingTaskManagersToRelease().stream()
+//                .map(PendingTaskManager::getPendingTaskManagerId)
+//                .forEach(taskManagerTracker::removePendingTaskManager);
+//
+//        for (TaskManagerInfo taskManagerToRelease : reconcileResult.getTaskManagersToRelease()) {
+//            releaseIdleTaskExecutorIfPossible(taskManagerToRelease);
+//        }
+//
+//        reconcileResult.getPendingTaskManagersToAllocate().forEach(this::allocateResource);
+//
+//        return reconcileResult.needReconcile();
+        return false;
+    }
+
+
+    private void declareNeededResourcesWithDelay() {
+//        Preconditions.checkState(resourceAllocator.isSupported());
+//
+//        if (declareNeededResourceDelay.toMillis() <= 0) {
+//            declareNeededResources();
+//        } else {
+//            if (declareNeededResourceFuture == null || declareNeededResourceFuture.isDone()) {
+//                declareNeededResourceFuture = new CompletableFuture<>();
+//                scheduledExecutor.schedule(
+//                        () ->
+//                                mainThreadExecutor.execute(
+//                                        () -> {
+//                                            declareNeededResources();
+//                                            Preconditions.checkNotNull(declareNeededResourceFuture)
+//                                                    .complete(null);
+//                                        }),
+//                        declareNeededResourceDelay.toMillis(),
+//                        TimeUnit.MILLISECONDS);
+//            }
+//        }
+    }
+
 }
